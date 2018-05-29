@@ -1,0 +1,28 @@
+{
+  "name": "cryptobot",
+  "version": "0.0.1",
+  "description": "Trading CryptoBot",
+  "main": "index.js",
+  "author": "Luciano Ropero <lropero@gmail.com>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "chalk": "^2.4.1",
+    "express": "^4.16.3",
+    "http-errors": "^1.6.3",
+    "morgan": "^1.9.0",
+    "node-binance-api": "^0.6.0"
+  },
+  "devDependencies": {
+    "rimraf": "^2.6.2",
+    "standard": "^11.0.1",
+    "yarn-upgrade-all": "^0.3.0"
+  },
+  "scripts": {
+    "clean": "yarn add --dev rimraf && rimraf ./yarn.lock && rimraf ./yarn-*.log && rimraf ./node_modules && yarn cache clean",
+    "nuke": "yarn run clean && yarn",
+    "start": "node index.js",
+    "test": "standard",
+    "upgrade": "yarn add --dev yarn-upgrade-all && yarn-upgrade-all && yarn run nuke"
+  }
+}
