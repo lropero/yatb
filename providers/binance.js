@@ -1,8 +1,8 @@
 const binance = require('node-binance-api')
 
-const { logError } = require('../helpers')
+const { logError, logSuccess } = require('../helpers')
 
-class Binance {
+class Provider {
   constructor (providerName, providerConfig, bot) {
     this.bot = bot
     this.name = providerName
@@ -14,14 +14,16 @@ class Binance {
       useServerTime: true
     })
 
-    this.getFunds()
+    this.retrieveFunds()
   }
 
-  getFunds () {
+  retrieveFunds () {
     binance.balance((error, balances) => {
       if (error) {
-        return logError(`Function binance.balance(): ${error.statusMessage || error.toString()}`)
+        return logError(`Provider ${this.name}: ${error.statusMessage || error.toString()}`)
       }
+
+      logSuccess(`Provider ${this.name} connected`)
 
       const funds = Object.keys(balances)
         .filter((key) => parseFloat(balances[key].available) > 0)
@@ -35,4 +37,4 @@ class Binance {
   }
 }
 
-module.exports = Binance
+module.exports = Provider

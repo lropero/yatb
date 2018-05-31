@@ -1,6 +1,6 @@
 {
   "name": "cryptobot",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Trading CryptoBot",
   "main": "index.js",
   "author": "Luciano Ropero <lropero@gmail.com>",

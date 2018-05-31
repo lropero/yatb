@@ -1,4 +1,5 @@
 module.exports = {
+  advisors: ['example'],
   providers: {
     binance: {
       keys: {

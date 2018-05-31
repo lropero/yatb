@@ -1,9 +1,9 @@
-const chalk = require('chalk')
 const createError = require('http-errors')
 const express = require('express')
 const morgan = require('morgan')
 
 const routes = require('./routes')
+const { logSuccess } = require('../helpers')
 const { serverPort } = require('../config')
 
 module.exports = (bot) => {
@@ -15,5 +15,5 @@ module.exports = (bot) => {
   server.use('/', routes)
   server.use((req, res) => res.status(405).json(createError(405)))
   server.listen(serverPort)
-  console.log(chalk.yellow(`Server listening on port ${serverPort}`))
+  logSuccess(`Server listening on port ${serverPort}`)
 }

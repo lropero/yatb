@@ -3,10 +3,25 @@ const { logError } = require('./helpers')
 
 class Bot {
   constructor () {
+    this.advisors = {}
     this.funds = {}
     this.providers = {}
 
     server(this)
+  }
+
+  addAdvisor (advisorName) {
+    let Advisor
+
+    try {
+      Advisor = require(`./advisors/${advisorName}`)
+    } catch (error) {
+      return logError(`${error.toString()}, skipping advisor ${advisorName}`)
+    }
+
+    if (Advisor) {
+      this.advisors[advisorName] = new Advisor(advisorName, this)
+    }
   }
 
   addProvider (providerName, providerConfig) {
