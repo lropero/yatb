@@ -3,10 +3,8 @@ const express = require('express')
 const morgan = require('morgan')
 
 const routes = require('./routes')
-const { logSuccess } = require('../helpers')
-const { serverPort } = require('../config')
 
-module.exports = (bot) => {
+module.exports = (port, bot) => {
   const server = express()
   server.set('bot', bot)
   server.use(express.urlencoded({ extended: false }))
@@ -14,6 +12,10 @@ module.exports = (bot) => {
   server.use(morgan('dev'))
   server.use('/', routes)
   server.use((req, res) => res.status(405).json(createError(405)))
-  server.listen(serverPort)
-  logSuccess(`Server listening on port ${serverPort}`)
+
+  return new Promise((resolve, reject) => {
+    server.listen(port)
+      .on('error', (error) => reject(new Error(`${error.toString()}, port ${port} might be in use`)))
+      .on('listening', () => resolve())
+  })
 }

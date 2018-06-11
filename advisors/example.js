@@ -1,11 +1,6 @@
-const { logSuccess } = require('../helpers')
-
 class Advisor {
-  constructor (advisorName, bot) {
+  constructor (bot) {
     this.bot = bot
-    this.name = advisorName
-
-    logSuccess(`Advisor ${this.name} running`)
   }
 }
 
