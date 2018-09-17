@@ -1,6 +1,6 @@
 module.exports = {
   advisors: ['example'],
-  providers: {
+  provider: {
     binance: {
       keys: {
         api: 'APIKEY',

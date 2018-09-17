@@ -3,6 +3,7 @@ const express = require('express')
 const morgan = require('morgan')
 
 const routes = require('./routes')
+const { errorToString } = require('../helpers')
 
 module.exports = (port, bot) => {
   const server = express()
@@ -15,7 +16,7 @@ module.exports = (port, bot) => {
 
   return new Promise((resolve, reject) => {
     server.listen(port)
-      .on('error', (error) => reject(new Error(`${error.toString()}, port ${port} might be in use`)))
       .on('listening', () => resolve())
+      .on('error', (error) => reject(new Error(`${errorToString(error)}, port ${port} might be in use`)))
   })
 }
