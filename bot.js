@@ -1,3 +1,5 @@
+const tulind = require('tulind')
+
 const server = require('./server')
 const { errorToString, logError, logSuccess, logWarning } = require('./helpers')
 
@@ -84,17 +86,69 @@ class Bot {
     })
   }
 
+  calculateIndicators (candles, configIndicators) {
+    return new Promise((resolve, reject) => {
+      const allowedInputs = Object.keys(candles[0])
+      const indicators = {}
+      const reversedCandles = candles.slice().reverse()
+
+      configIndicators.map(({ name = '', type = '', inputs = {}, options = {} }) => {
+        if (indicators[name]) {
+          return reject(new Error(`Indicator names must be unique, ${name} already exists`))
+        }
+
+        const indicator = tulind.indicators[type]
+        if (!indicator) {
+          return reject(new Error(`Indicator ${type} doesn't exists`))
+        }
+
+        const indicatorInputs = []
+        indicator.input_names.map((inputName) => {
+          if (!allowedInputs.includes(inputName) && !allowedInputs.includes(inputs[inputName])) {
+            return reject(new Error(!Object.keys(inputs).includes(inputName)
+              ? `Missing input '${inputName}' for indicator ${name}`
+              : `Allowed values for input ${name}->${inputName}: ${allowedInputs.join(', ')}`
+            ))
+          }
+          const input = allowedInputs.includes(inputName) ? inputName : inputs[inputName]
+          indicatorInputs.push(reversedCandles.map((candle) => candle[input]))
+        })
+
+        const indicatorOptions = []
+        indicator.option_names.map((optionName) => {
+          if (!Object.keys(options).includes(optionName)) {
+            return reject(new Error(`Missing option '${optionName}' for indicator ${name}`))
+          }
+          indicatorOptions.push(options[optionName])
+        })
+
+        indicator.indicator(indicatorInputs, indicatorOptions, (error, results) => {
+          if (error) {
+            return reject(new Error(`Indicator ${name}: ${errorToString(error)}`))
+          }
+          indicators[name] = {}
+          indicator.output_names.forEach((outputName, index) => {
+            indicators[name][outputName] = results[index].reverse()
+          })
+        })
+      })
+
+      return resolve(indicators)
+    })
+  }
+
   getFunds () {
     return this.funds
   }
 
   requestCharts (configCharts) {
-    const promises = configCharts.map((configChart) => new Promise(async (resolve, reject) => {
+    const promises = configCharts.map(({ symbol = '', timeframe = '', periods = 0, indicators = {} }, index) => new Promise(async (resolve, reject) => {
       try {
-        const chart = await this.provider.retrieveChart(configChart)
+        const chart = await this.provider.retrieveChart(symbol, timeframe, periods)
+        chart.indicators = await this.calculateIndicators(chart.candles, indicators)
         resolve(chart)
       } catch (error) {
-        return reject(new Error(`Chart ${configChart.symbol}: ${errorToString(error)}`))
+        return reject(new Error(`Chart #${index + 1}: ${errorToString(error)}`))
       }
     }))
 

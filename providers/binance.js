@@ -58,7 +58,7 @@ class Provider {
     })
   }
 
-  retrieveChart ({ symbol, timeframe, periods }) {
+  retrieveChart (symbol, timeframe, periods) {
     return new Promise((resolve, reject) => {
       try {
         this.api.candlesticks(symbol, timeframe, (error, ticks) => {

@@ -7,7 +7,7 @@ module.exports = {
       indicators: [ // https://tulipindicators.org/list
         {
           name: 'macd',
-          indicator: 'macd',
+          type: 'macd',
           inputs: {
             real: 'close'
           },
@@ -19,7 +19,7 @@ module.exports = {
         },
         {
           name: 'moving average',
-          indicator: 'sma',
+          type: 'sma',
           inputs: {
             real: 'close'
           },
@@ -29,7 +29,7 @@ module.exports = {
         },
         {
           name: 'stochastics',
-          indicator: 'stoch',
+          type: 'stoch',
           options: {
             '%d period': 7,
             '%k period': 14,
@@ -38,7 +38,7 @@ module.exports = {
         },
         {
           name: 'volume',
-          indicator: 'sma',
+          type: 'sma',
           inputs: {
             real: 'volume'
           },
