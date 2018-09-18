@@ -16,7 +16,7 @@ module.exports = (port, bot) => {
 
   return new Promise((resolve, reject) => {
     server.listen(port)
-      .on('listening', () => resolve())
       .on('error', (error) => reject(new Error(`${errorToString(error)}, port ${port} might be in use`)))
+      .on('listening', () => resolve())
   })
 }

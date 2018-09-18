@@ -25,6 +25,7 @@ class Provider {
         })
 
         const funds = await this.retrieveFunds(api)
+
         return resolve({
           funds,
           instance: new Provider(name, api, bot)
@@ -35,23 +36,29 @@ class Provider {
     })
   }
 
-  static retrieveFunds (api) {
+  openStream (symbol, timeframe, candleReady) {
     return new Promise((resolve, reject) => {
       try {
-        api.balance((error, balances) => {
-          if (error) {
-            return reject(new Error(`${error.statusMessage || errorToString(error)}`))
+        this.api.websockets.candlesticks(symbol, timeframe, (candlesticks) => {
+          const { k: ticks } = candlesticks
+          const { t: time, o: open, h: high, l: low, c: close, v: volume, n: trades, x: isFinal } = ticks
+
+          if (isFinal) {
+            const candle = {
+              time,
+              open: parseFloat(open),
+              high: parseFloat(high),
+              low: parseFloat(low),
+              close: parseFloat(close),
+              volume: parseFloat(volume),
+              trades,
+              volumePerTrade: volume / trades
+            }
+
+            candleReady(candle)
           }
-
-          const funds = Object.keys(balances)
-            .filter((key) => parseFloat(balances[key].available) > 0)
-            .reduce((obj, key) => {
-              obj[key] = balances[key]
-              return obj
-            }, {})
-
-          return resolve(funds)
         })
+        return resolve()
       } catch (error) {
         return reject(error)
       }
@@ -78,12 +85,34 @@ class Provider {
           })).slice(0, periods)
 
           const chart = {
-            candles: candles.length ? candles.reverse() : [],
-            indicators: {}
+            candles: candles.length ? candles.reverse() : []
           }
 
           return resolve(chart)
         }, { limit: periods + 1 })
+      } catch (error) {
+        return reject(error)
+      }
+    })
+  }
+
+  static retrieveFunds (api) {
+    return new Promise((resolve, reject) => {
+      try {
+        api.balance((error, balances) => {
+          if (error) {
+            return reject(new Error(`${error.statusMessage || errorToString(error)}`))
+          }
+
+          const funds = Object.keys(balances)
+            .filter((asset) => parseFloat(balances[asset].available) > 0)
+            .reduce((obj, asset) => {
+              obj[asset] = balances[asset]
+              return obj
+            }, {})
+
+          return resolve(funds)
+        })
       } catch (error) {
         return reject(error)
       }

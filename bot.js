@@ -1,3 +1,4 @@
+const hash = require('object-hash')
 const tulind = require('tulind')
 
 const server = require('./server')
@@ -5,29 +6,12 @@ const { errorToString, logError, logSuccess, logWarning } = require('./helpers')
 
 class Bot {
   constructor (serverPort, provider, advisors) {
-    this.advisors = {}
-    this.funds = {}
     this.provider = {}
+    this.funds = {}
+    this.charts = {}
+    this.advisors = []
 
-    this.startServer(serverPort)
-      .then(async () => {
-        try {
-          await this.addProvider(provider)
-        } catch (error) {
-          logError(`${errorToString(error)}; exiting`)
-          return process.exit()
-        }
-
-        try {
-          await Promise.all(this.addAdvisors(advisors))
-          if (!Object.keys(this.advisors).length) {
-            throw new Error('No advisors running')
-          }
-        } catch (error) {
-          logError(`${errorToString(error)}; exiting`)
-          return process.exit()
-        }
-      })
+    this.init(serverPort, provider, advisors)
   }
 
   addAdvisors (advisors) {
@@ -43,7 +27,7 @@ class Bot {
         const advisorName = advisor.charAt(0).toUpperCase() + advisor.substr(1)
         try {
           const instance = await Advisor.init(advisorName, this)
-          this.advisors[advisor] = instance
+          this.advisors.push(instance)
           logSuccess(`Advisor ${advisorName} running`)
           return resolve()
         } catch (error) {
@@ -55,26 +39,35 @@ class Bot {
     return promises.map(promise => promise.catch ? promise.catch((error) => logError(errorToString(error))) : promise)
   }
 
+  async addCandle (candle, chartId) {
+    this.charts[chartId].candles.unshift(candle)
+    while (this.charts[chartId].candles.length > this.charts[chartId].config.periods) {
+      this.charts[chartId].candles.pop()
+    }
+    this.charts[chartId].indicators = await this.calculateIndicators(this.charts[chartId].candles, this.charts[chartId].config.indicators)
+    this.advisors.map((advisor) => advisor.analyze(chartId))
+  }
+
   addProvider (provider) {
     return new Promise(async (resolve, reject) => {
-      const providerKeys = Object.keys(provider)
-      if (!providerKeys.length) {
+      const providers = Object.keys(provider)
+      if (!providers.length) {
         return reject(new Error('No provider configured'))
-      } else if (providerKeys.length > 1) {
+      } else if (providers.length > 1) {
         logWarning('More than one provider is configured, using the first one')
       }
 
       let Provider
       try {
-        Provider = require(`./providers/${providerKeys[0]}`)
+        Provider = require(`./providers/${providers[0]}`)
       } catch (error) {
         return reject(error)
       }
 
       if (Provider) {
         try {
-          const providerName = providerKeys[0].charAt(0).toUpperCase() + providerKeys[0].substr(1)
-          const { funds, instance } = await Provider.init(providerName, provider[providerKeys[0]], this)
+          const providerName = providers[0].charAt(0).toUpperCase() + providers[0].substr(1)
+          const { funds, instance } = await Provider.init(providerName, provider[providers[0]], this)
           this.funds = funds
           this.provider = instance
           logSuccess(`Provider ${providerName} connected`)
@@ -127,7 +120,7 @@ class Bot {
             return reject(new Error(`Indicator ${name}: ${errorToString(error)}`))
           }
           indicators[name] = {}
-          indicator.output_names.forEach((outputName, index) => {
+          indicator.output_names.map((outputName, index) => {
             indicators[name][outputName] = results[index].reverse()
           })
         })
@@ -141,29 +134,80 @@ class Bot {
     return this.funds
   }
 
-  requestCharts (configCharts) {
-    const promises = configCharts.map(({ symbol = '', timeframe = '', periods = 0, indicators = {} }, index) => new Promise(async (resolve, reject) => {
-      try {
-        const chart = await this.provider.retrieveChart(symbol, timeframe, periods)
-        chart.indicators = await this.calculateIndicators(chart.candles, indicators)
-        resolve(chart)
-      } catch (error) {
-        return reject(new Error(`Chart #${index + 1}: ${errorToString(error)}`))
-      }
-    }))
+  async init (serverPort, provider, advisors) {
+    try {
+      await this.startServer(serverPort)
+    } catch (error) {
+      logError(`${errorToString(error)}`, true)
+    }
 
-    return promises.map(promise => promise.catch ? promise.catch((error) => logError(`${errorToString(error)}`)) : promise)
+    try {
+      await this.addProvider(provider)
+    } catch (error) {
+      logError(`${errorToString(error)}`, true)
+    }
+
+    try {
+      await Promise.all(this.addAdvisors(advisors))
+      if (!this.advisors.length) {
+        throw new Error('No advisors running')
+      }
+    } catch (error) {
+      logError(`${errorToString(error)}`, true)
+    }
+  }
+
+  requestCharts (configCharts) {
+    return new Promise(async (resolve, reject) => {
+      const charts = await Promise.all(configCharts.map(({ symbol = '', timeframe = '', periods = 0, indicators = {} }, index) => new Promise(async (resolve, reject) => {
+        const chartId = hash(configCharts[index])
+        if (this.charts[chartId]) {
+          return resolve(this.charts[chartId])
+        }
+
+        try {
+          const chart = await this.provider.retrieveChart(symbol, timeframe, periods)
+          chart.chartId = chartId
+          chart.config = configCharts[index]
+          chart.indicators = await this.calculateIndicators(chart.candles, indicators)
+          return resolve(chart)
+        } catch (error) {
+          return reject(new Error(`Chart #${index + 1}: ${errorToString(error)}`))
+        }
+      })))
+
+      let configLength = configCharts.length
+      const curatedCharts = charts.filter((chart) => chart).reduce((obj, chart) => {
+        const { chartId, ...rest } = chart
+        if (!obj[chartId]) {
+          obj[chartId] = rest
+        } else configLength--
+        return obj
+      }, {})
+
+      const chartIds = Object.keys(curatedCharts)
+      if (chartIds.length !== configLength) {
+        return reject(new Error('Charts not loaded properly'))
+      }
+
+      chartIds.map(async (chartId) => {
+        this.charts[chartId] = curatedCharts[chartId]
+        const { symbol, timeframe } = this.charts[chartId].config
+        await this.provider.openStream(symbol, timeframe, (candle) => this.addCandle(candle, chartId))
+      })
+
+      return resolve(chartIds)
+    })
   }
 
   startServer (serverPort) {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
       try {
         await server(serverPort, this)
         logSuccess(`Server listening on port ${serverPort}`)
         return resolve()
       } catch (error) {
-        logError(`${errorToString(error)}; exiting`)
-        return process.exit()
+        return reject(error)
       }
     })
   }
