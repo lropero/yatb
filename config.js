@@ -1,12 +1,4 @@
 module.exports = {
-  advisors: ['example'],
-  provider: {
-    binance: {
-      keys: {
-        api: 'APIKEY',
-        secret: 'APISECRET'
-      }
-    }
-  },
-  serverPort: 7007
+  provider: 'binance',
+  advisors: ['example']
 }

@@ -1,11 +1,11 @@
+const calculateFunds = require('./calculateFunds')
 const errorToString = require('./errorToString')
-const logError = require('./logError')
-const logSuccess = require('./logSuccess')
-const logWarning = require('./logWarning')
+const timeframeToMilliseconds = require('./timeframeToMilliseconds')
+const withIndicators = require('./withIndicators')
 
 module.exports = {
+  calculateFunds,
   errorToString,
-  logError,
-  logSuccess,
-  logWarning
+  timeframeToMilliseconds,
+  withIndicators
 }

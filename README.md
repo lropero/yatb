@@ -1,8 +1,20 @@
 # CryptoBot
-*Tomatoes and black holes*
+*Potatoes and black holes*
 
-Add provider keys to `config.js`, then:
+### Installation
+```sh
+$ yarn
+```
+
+### Usage
+Add Binance keys to `providers/binance/config.js`
+Set advisors in `config.js`
 ```sh
 $ yarn run start
-$ curl http://localhost:7007/funds | json_pp
+```
+
+### Upgrade dependencies
+```sh
+$ yarn run upgrade
+$ yarn run nuke
 ```
