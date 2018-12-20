@@ -54,8 +54,8 @@ module.exports = {
       timeframe: '2h',
       strategies: {
         'bands': {
-          profitTarget: '8%',
-          stopLoss: '3%'
+          profitTarget: '1%',
+          stopLoss: '2%'
         }
       }
     },
@@ -74,7 +74,7 @@ module.exports = {
       timeframe: '15m',
       strategies: {
         'bands': {
-          profitTarget: '5%',
+          profitTarget: '1%',
           stopLoss: '2%'
         }
       }

@@ -1,4 +1,4 @@
-const tulind = require('tulind')
+const tulind = require('tulind') // https://tulipindicators.org/list
 
 const { errorToString } = require('.')
 

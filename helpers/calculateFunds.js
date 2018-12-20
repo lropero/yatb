@@ -9,7 +9,7 @@ function calculateFunds (balances, prices) {
       }
       return funds
     }, {})
-  const funds = Object.keys(fundsWithoutDollarPrice).reduce((funds, asset) => {
+  return Object.keys(fundsWithoutDollarPrice).reduce((funds, asset) => {
     if (asset === 'BTC') {
       funds[asset] = {
         ...fundsWithoutDollarPrice[asset],
@@ -28,7 +28,6 @@ function calculateFunds (balances, prices) {
     }
     return funds
   }, {})
-  return funds
 }
 
 module.exports = calculateFunds

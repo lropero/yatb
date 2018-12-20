@@ -1,4 +1,4 @@
 module.exports = {
-  provider: 'binance',
-  advisors: ['example']
+  advisors: ['example'],
+  provider: 'binance'
 }
