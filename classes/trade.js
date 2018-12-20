@@ -75,7 +75,6 @@ class Trade {
   close (silent = false) {
     return new Promise(async (resolve, reject) => {
       try {
-        this.log({ level: 'silent', message: `CLOSE ${this.id}` })
         if (!this.info) {
           throw new Error(`Info not available`)
         }
@@ -95,7 +94,7 @@ class Trade {
           if (!silent) {
             const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
             const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
-            this.log({ level: 'close', message: `${chalk.underline('T' + this.id)}: ${this.info.symbol} ${quantity}@${price} ${this.who}` })
+            this.log({ level: 'close', message: `${chalk.underline('T' + this.id)}: ${this.info.symbol} ${quantity}@${price} ${chalk.black(this.who)}` })
           }
           this.updateFunds()
           this.show(this.chartId)
@@ -135,7 +134,7 @@ class Trade {
             const order = await this.close(true)
             const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
             const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
-            this.log({ level: 'stop', message: `${chalk.underline('T' + this.id)}: ${this.info.symbol} ${quantity}@${price} ${this.who}` })
+            this.log({ level: 'stop', message: `${chalk.underline('T' + this.id)}: ${this.info.symbol} ${quantity}@${price} ${chalk.black(this.who)}` })
             this.isWinner = false
           } catch (error) {
             this.log(error)
@@ -167,7 +166,7 @@ class Trade {
             const order = await this.close(true)
             const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
             const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
-            this.log({ level: 'target', message: `${chalk.underline('T' + this.id)}: ${this.info.symbol} ${quantity}@${price} ${this.who}` })
+            this.log({ level: 'target', message: `${chalk.underline('T' + this.id)}: ${this.info.symbol} ${quantity}@${price} ${chalk.black(this.who)}` })
             this.isWinner = true
           } catch (error) {
             this.log(error)

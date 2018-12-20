@@ -19,7 +19,7 @@ const colors = {
   CHART_PRICE_UP: 'cyan',
   CHART_TITLE: 'white',
   CHART_VOLUME_DOWN: ['red', 'bgRed'],
-  CHART_VOLUME_NUMBER: 'cyan',
+  CHART_VOLUME_NUMBER: 'yellow',
   CHART_VOLUME_NUMBER_DOTS: 'gray',
   CHART_VOLUME_OPEN: ['white', 'bgWhite'],
   CHART_VOLUME_UP: ['green', 'bgGreen'],
@@ -338,7 +338,7 @@ class UI {
     if (trades.length) {
       this.display.setContent(trades.map((trade) => trade.toString()).join('\n'))
     } else {
-      this.display.setContent(chalk.white('Still no trades') + ' ' + chalk.gray(':('))
+      this.display.setContent(chalk.white('No trades') + ' ' + chalk.gray(':('))
     }
     this.screen.render()
   }

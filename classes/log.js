@@ -17,7 +17,7 @@ class Log {
     }
     switch (this.level) {
       case 'close': {
-        sfx.say('close')
+        sfx.play('submarine')
         break
       }
       case 'error': {

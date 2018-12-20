@@ -203,7 +203,7 @@ class Bot {
       }
       case 'c':
       case 'x': {
-        if (this.currentMode === 'c') {
+        if (this.currentMode === 'c' || this.currentMode === 'z') {
           const chartIds = Object.keys(this.charts).filter((chartId) => this.advisors[this.currentAdvisor].chartIds.includes(chartId) && this.charts[chartId].enabled)
           const index = chartIds.findIndex((chartId) => chartId === this.currentChart)
           if (key === 'c') {
@@ -285,12 +285,18 @@ class Bot {
         break
       }
       case 'z': {
-        if (this.trades.length) {
-          const trade = this.trades[this.trades.length - 1]
-          const { advisorId, chartId } = trade
-          this.currentAdvisor = advisorId
-          this.currentChart = chartId
-          this.currentMode = 'c'
+        const trades = this.trades.filter((trade) => trade.isOpen)
+        if (trades.length) {
+          const tradeIndex = trades.findIndex((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
+          if (tradeIndex >= 0) {
+            const trade = trades[tradeIndex + 1] ? trades[tradeIndex + 1] : trades[0]
+            this.currentAdvisor = trade.advisorId
+            this.currentChart = trade.chartId
+          } else {
+            this.currentAdvisor = trades[0].advisorId
+            this.currentChart = trades[0].chartId
+          }
+          this.currentMode = 'z'
           this.show(this.currentChart)
         }
         break
@@ -345,7 +351,7 @@ class Bot {
             t: () => this.handleKeyPress('t'), // Show trades
             x: () => this.handleKeyPress('x'), // Show chart / previous chart
             y: () => this.handleKeyPress('y'), // Yes
-            z: () => this.handleKeyPress('z') // Show last traded chart
+            z: () => this.handleKeyPress('z') // Cycle traded charts
           },
           getEstimatedValue: () => Object.keys(this.funds).reduce((estimatedValue, asset) => {
             if (this.funds[asset].dollarPrice) {
@@ -450,7 +456,8 @@ class Bot {
         this.currentMode = 'f'
       }
       switch (this.currentMode) {
-        case 'c': {
+        case 'c':
+        case 'z': {
           if (this.currentChart && chartId && this.currentChart === chartId) {
             const trade = this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen)
             this.ui.renderChart(this.advisors[this.currentAdvisor], this.charts[this.currentChart], trade)
