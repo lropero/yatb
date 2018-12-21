@@ -20,7 +20,7 @@ class Strategy {
           }
         }
       } else if (prevSlow10.sma > prevExpo30.ema) { // Market stopped trending up
-        return resolve('CLOSE')
+        return resolve('CLOSE LONG')
       }
       if (slow10.sma < expo30.ema) { // Market is trending down
         if (candles[0].close < expo30.ema && candles[0].close > slow10.sma) { // Price is in the zone
@@ -29,7 +29,7 @@ class Strategy {
           }
         }
       } else if (prevSlow10.sma < prevExpo30.ema) { // Market stopped trending down
-        return resolve('CLOSE')
+        return resolve('CLOSE SHORT')
       }
       return resolve()
     })

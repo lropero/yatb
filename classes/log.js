@@ -43,7 +43,7 @@ class Log {
   toString (avoidBlack = false) {
     const getIcon = (level) => {
       switch (level) {
-        case 'close': return chalk[avoidBlack ? 'gray' : 'black'](figures.play)
+        case 'close': return chalk.yellow(figures.play)
         case 'error': return chalk.red(figures.bullet)
         case 'info': return chalk.white(figures.bullet)
         case 'long': return chalk.cyan(figures.arrowUp)

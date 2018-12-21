@@ -6,21 +6,25 @@ const { interval, timer } = require('rxjs')
 const { errorToString, timeframeToMilliseconds, withIndicators } = require('../helpers')
 
 class Chart {
-  constructor (id, config, exchangeInfo, log, notifications, retrieveStream, show) {
+  constructor (id, config, info, log, notifications, retrieveStream, show) {
     this.id = id
     this.config = config
     this.enabled = false
+    this.info = info
     this.log = log
     this.name = `${config.symbol} ${config.timeframe} [${id.substr(0, 8)}]`
     this.notifications = notifications
     this.retrieveStream = retrieveStream
     this.show = show
-    this.setInfo(exchangeInfo)
   }
 
   static initialize (chartId, chartConfig, { exchangeInfo, log, notifications, retrieveStream, show }) {
     return new Promise(async (resolve, reject) => {
-      const chart = new Chart(chartId, chartConfig, exchangeInfo, log, notifications, retrieveStream, show)
+      const info = exchangeInfo.symbols.find((info) => info.symbol === chartConfig.symbol && typeof info.status === 'string')
+      if (!info) {
+        throw new Error(`Info not available`)
+      }
+      const chart = new Chart(chartId, chartConfig, info, log, notifications, retrieveStream, show)
       try {
         await chart.start()
         log({ level: 'info', message: `Added chart ${chart.name}` })
@@ -131,19 +135,6 @@ class Chart {
     }
   }
 
-  setInfo (exchangeInfo) {
-    const info = exchangeInfo.symbols.find((info) => info.symbol === this.config.symbol)
-    if (this.info) {
-      if (hash(this.info) !== hash(info)) {
-        this.info = info
-        this.log({ level: 'silent', message: `Chart info updated, restarting ${this.name}` })
-        this.restart()
-      }
-    } else {
-      this.info = info
-    }
-  }
-
   start () {
     return new Promise(async (resolve, reject) => {
       try {
@@ -163,6 +154,15 @@ class Chart {
         return reject(error)
       }
     })
+  }
+
+  updateInfo (exchangeInfo) {
+    const info = exchangeInfo.symbols.find((info) => info.symbol === this.info.symbol)
+    if (info && hash(info) !== hash(this.info)) {
+      this.info = info
+      this.log({ level: 'silent', message: `Chart info updated, restarting ${this.name}` })
+      this.restart()
+    }
   }
 }
 
