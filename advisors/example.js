@@ -50,6 +50,10 @@ module.exports = {
         'taz': {
           profitTarget: '2%',
           stopLoss: '2%'
+        },
+        'vsa': {
+          profitTarget: '2%',
+          stopLoss: '2%'
         }
       }
     },

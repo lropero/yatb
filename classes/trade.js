@@ -27,10 +27,12 @@ class Trade {
     this.show = show
     this.spent = order.fills.reduce((spent, fill) => spent + parseFloat(fill.qty) * parseFloat(fill.price), 0)
     this.stopLoss = parseFloat(strategy.config.stopLoss || 0) / 100
-    this.stopPrice = this.setStop(stream)
-    this.targetPrice = this.setTarget(stream)
+    this.stopPrice = this.price - ((this.spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)
+    this.targetPrice = this.price + ((this.spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)
     this.updateFunds = updateFunds
     this.who = who
+    this.setStop(stream)
+    this.setTarget(stream)
     const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
     const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length + 1
     this.log({ level: this.isLong ? 'long' : 'short', message: `${chalk.underline('T' + this.id)} ${this.info.symbol} ${this.quantity}${chalk.cyan('@')}${this.price.toFixed(decimalPlaces)} ${chalk.green('TRGT ' + this.targetPrice.toFixed(decimalPlaces))} ${chalk.red('STOP ' + this.stopPrice.toFixed(decimalPlaces))} ${chalk.black(this.who)}` })
@@ -91,7 +93,7 @@ class Trade {
         if (this.target) {
           this.target.unsubscribe()
         }
-        const order = await (this.isLong ? this.sell(this.quantity, this.info) : this.buy(this.quantity, this.info))
+        const order = this.isLong ? await this.sell(this.quantity, this.info) : await this.buy(this.quantity, this.info)
         if (order.orderId && order.fills.length) {
           this.isOpen = false
           this.orders.push({
@@ -126,64 +128,58 @@ class Trade {
     if (this.stop) {
       this.stop.unsubscribe()
     }
-    let stopPrice = 0
-    if (this.stopLoss > 0) {
-      stopPrice = this.price - ((this.spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)
-      this.stop = stream.pipe(
-        filter((candle) => {
-          if (this.isLong) {
-            return candle.low <= stopPrice
-          } else {
-            return candle.high >= stopPrice
-          }
-        }),
-        first(),
-        tap(async () => {
-          try {
-            const order = await this.close(true)
-            const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
-            const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
-            this.log({ level: 'stop', message: `${chalk.underline('T' + this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price} ${chalk.black(this.who)}` })
-            this.isWinner = false
-          } catch (error) {
-            this.log(error)
-          }
-        })
-      ).subscribe()
-    }
-    return stopPrice
+    this.stop = stream.pipe(
+      filter((candle) => {
+        if (this.isLong) {
+          return candle.low <= this.stopPrice
+        } else {
+          return candle.high >= this.stopPrice
+        }
+      }),
+      first(),
+      tap(async () => {
+        try {
+          const order = await this.close(true)
+          const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
+          const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length + 1
+          const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
+          const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
+          this.log({ level: 'stop', message: `${chalk.underline('T' + this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(decimalPlaces)} ${chalk.black(this.who)}` })
+          this.isWinner = false
+        } catch (error) {
+          this.log(error)
+        }
+      })
+    ).subscribe()
   }
 
   setTarget (stream) {
     if (this.target) {
       this.target.unsubscribe()
     }
-    let targetPrice = 0
-    if (this.profitTarget > 0) {
-      targetPrice = this.price + ((this.spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)
-      this.target = stream.pipe(
-        filter((candle) => {
-          if (this.isLong) {
-            return candle.high >= targetPrice
-          } else {
-            return candle.low <= targetPrice
-          }
-        }),
-        first(),
-        tap(async () => {
-          try {
-            const order = await this.close(true)
-            const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
-            const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
-            this.log({ level: 'target', message: `${chalk.underline('T' + this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price} ${chalk.black(this.who)}` })
-            this.isWinner = true
-          } catch (error) {
-            this.log(error)
-          }
-        })
-      ).subscribe()
-    }
-    return targetPrice
+    this.target = stream.pipe(
+      filter((candle) => {
+        if (this.isLong) {
+          return candle.high >= this.targetPrice
+        } else {
+          return candle.low <= this.targetPrice
+        }
+      }),
+      first(),
+      tap(async () => {
+        try {
+          const order = await this.close(true)
+          const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
+          const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length + 1
+          const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
+          const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
+          this.log({ level: 'target', message: `${chalk.underline('T' + this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(decimalPlaces)} ${chalk.black(this.who)}` })
+          this.isWinner = true
+        } catch (error) {
+          this.log(error)
+        }
+      })
+    ).subscribe()
   }
 
   toString () {
