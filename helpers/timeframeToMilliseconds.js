@@ -15,7 +15,7 @@ function timeframeToMilliseconds (timeframe) {
     case '3d': return 1000 * 60 * 60 * 24 * 3
     case '1w': return 1000 * 60 * 60 * 24 * 7
   }
-  return 1000 * 60 * 60 * 24 * 30
+  return 0
 }
 
 module.exports = timeframeToMilliseconds

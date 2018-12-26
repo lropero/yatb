@@ -21,10 +21,9 @@ class Provider {
     })
   }
 
-  buy (amount, info) {
+  buy (quantity, info) {
     return this.limiter.schedule(() => new Promise(async (resolve, reject) => {
       try {
-        const quantity = await this.clampQuantity(amount, info, true)
         if (!(quantity > 0)) {
           return reject(new Error('Can\'t buy zero'))
         }
@@ -66,7 +65,7 @@ class Provider {
   }
 
   getQuote (symbol) {
-    return new Promise((resolve, reject) => {
+    return this.limiter.schedule(() => new Promise((resolve, reject) => {
       try {
         this.api.prices(symbol, (error, ticker) => {
           if (error) {
@@ -77,7 +76,7 @@ class Provider {
       } catch (error) {
         return reject(error)
       }
-    })
+    }))
   }
 
   retrieveBalance () {
@@ -189,10 +188,9 @@ class Provider {
     }))
   }
 
-  sell (amount, info) {
+  sell (quantity, info) {
     return this.limiter.schedule(() => new Promise(async (resolve, reject) => {
       try {
-        const quantity = await this.clampQuantity(amount, info)
         if (!(quantity > 0)) {
           return reject(new Error('Can\'t sell zero'))
         }

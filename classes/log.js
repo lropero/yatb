@@ -16,8 +16,17 @@ class Log {
       this.stack = event.stack
     }
     switch (this.level) {
-      case 'close': {
+      case 'closeExpire':
+      case 'closeSignal': {
         sfx.play('submarine')
+        break
+      }
+      case 'closeStop': {
+        sfx.play('basso')
+        break
+      }
+      case 'closeTarget': {
+        sfx.play('tink')
         break
       }
       case 'error': {
@@ -29,33 +38,30 @@ class Log {
         sfx.play('pop')
         break
       }
-      case 'stop': {
-        sfx.play('basso')
-        break
-      }
-      case 'target': {
-        sfx.play('tink')
-        break
-      }
     }
   }
 
   toString (avoidBlack = false) {
     const getIcon = (level) => {
       switch (level) {
-        case 'close': return chalk.yellow(figures.play)
+        case 'closeExpire': return chalk.blue(figures.play)
+        case 'closeSignal': return chalk.yellow(figures.play)
+        case 'closeStop': return chalk.red(figures.play)
+        case 'closeTarget': return chalk.green(figures.play)
         case 'error': return chalk.red(figures.bullet)
         case 'info': return chalk.white(figures.bullet)
         case 'long': return chalk.cyan(figures.arrowUp)
         case 'short': return chalk.magenta(figures.arrowDown)
         case 'silent': return chalk.gray(figures.bullet)
-        case 'stop': return chalk.red(figures.play)
         case 'success': return chalk.green(figures.bullet)
-        case 'target': return chalk.green(figures.play)
         case 'warning': return chalk.yellow(figures.bullet)
       }
     }
-    return `${getIcon(this.level)} ${chalk[avoidBlack ? 'gray' : 'black'](format(this.date, 'DD-MMM-YY HH:mm:ss'))} ${chalk.white(this.message)}`
+    let message = this.message
+    if (this.level === 'long' || this.level === 'short') {
+      message = message.replace(/(.*)#avoidBlack(.*)#/g, (message, string, who) => string + (avoidBlack ? chalk.gray(who) : chalk.black(who)))
+    }
+    return `${getIcon(this.level)} ${chalk[avoidBlack ? 'gray' : 'black'](format(this.date, 'DD-MMM-YY HH:mm:ss'))} ${chalk.white(message)}`
   }
 }
 

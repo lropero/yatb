@@ -199,7 +199,7 @@ class UI {
         const isQuote = String.fromCharCode(9472, 9581, 9584).includes(stripAnsi(drawing).slice(-1))
         if (!plotStyled.length) {
           chartLength = stripAnsi(drawing).length
-          const title = chalk[colors.CHART_TITLE](`${advisor.name} - ${chart.name}`)
+          const title = chalk[colors.CHART_TITLE](`${advisor.name} - ${chart.name}`) + (trade ? ' ' + trade.toString(false, false) : '')
           if (chartLength > stripAnsi(title).length) {
             drawing = `${title} ${chalk[colors.CHART_DRAWING](stripAnsi(drawing).slice(stripAnsi(title).length + 1))}`
           }

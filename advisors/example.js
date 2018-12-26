@@ -7,7 +7,8 @@ module.exports = {
       strategies: {
         'vsa': {
           profitTarget: '2%',
-          stopLoss: '2%'
+          stopLoss: '2%',
+          timeToLive: '30m'
         },
         'tazv': {
           profitTarget: '1%',
@@ -21,7 +22,8 @@ module.exports = {
       strategies: {
         'vsa': {
           profitTarget: '3%',
-          stopLoss: '2%'
+          stopLoss: '2%',
+          timeToLive: '2h'
         }
       }
     },
@@ -31,7 +33,8 @@ module.exports = {
       strategies: {
         'vsa': {
           profitTarget: '5%',
-          stopLoss: '2%'
+          stopLoss: '2%',
+          timeToLive: '4h'
         }
       }
     },
@@ -53,7 +56,8 @@ module.exports = {
         },
         'vsa': {
           profitTarget: '2%',
-          stopLoss: '2%'
+          stopLoss: '2%',
+          timeToLive: '1h'
         }
       }
     },

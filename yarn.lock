@@ -211,10 +211,10 @@ blessed@^0.1.81:
   resolved "https://registry.yarnpkg.com/blessed/-/blessed-0.1.81.tgz#f962d687ec2c369570ae71af843256e6d0ca1129"
   integrity sha1-+WLWh+wsNpVwrnGvhDJW5tDKESk=
 
-bottleneck@^2.14.0:
-  version "2.14.0"
-  resolved "https://registry.yarnpkg.com/bottleneck/-/bottleneck-2.14.0.tgz#4cbd8ffb4cf589ca4e71853561fbe1e464924864"
-  integrity sha512-hM5zQPPpIe2/pn8rornETr2x7/HOBGJ5u1RW1js6zvE5453bRMMbtbZl0ojB8yNj7w2xNWddpNukrhOikHb7BQ==
+bottleneck@^2.14.1:
+  version "2.14.1"
+  resolved "https://registry.yarnpkg.com/bottleneck/-/bottleneck-2.14.1.tgz#3134b3dabbdafa19abbb0531c03529858d029190"
+  integrity sha512-FAZr9OekUbx/lCGY/Sok2QOFOy3exRWRcjVJfmHrh3J9UoIaLHT0E+TwhXTIPmKS8JHuX6i/eH/kmhhHBEx7DQ==
 
 brace-expansion@^1.1.7:
   version "1.1.11"
@@ -243,9 +243,9 @@ cacheable-request@^2.1.1:
     responselike "1.0.2"
 
 cacheable-request@^5.1.0:
-  version "5.2.0"
-  resolved "https://registry.yarnpkg.com/cacheable-request/-/cacheable-request-5.2.0.tgz#00c87097835af4caf92a97390660ecadce51187d"
-  integrity sha512-h1n0vjpFaByTvU6PiyTKk2kx4OnuV1aVUynCUd/FiKl4icpPSceowk3rHczwFEBuZvz+E1EU4KExR0MCPeQfaQ==
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/cacheable-request/-/cacheable-request-5.2.1.tgz#41814b0460b68b9baf74f57f5a6046224d55d71e"
+  integrity sha512-+dLut9zvvuIM/MrtdHBVSh/QYJ9+uCKYoqww9cOYrndQH4O4rD/qH0IAwFhD5WJKfmWE6WgCOrLQPd/H5YJRVQ==
   dependencies:
     clone-response "^1.0.2"
     get-stream "^4.0.0"
