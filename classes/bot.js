@@ -176,6 +176,7 @@ class Bot {
                   }),
                   chartId,
                   exchangeInfo: this.exchangeInfo,
+                  id: `T${this.trades.length + 1}`,
                   isLong,
                   log: (event) => this.log(event),
                   quantity,
@@ -400,7 +401,7 @@ class Bot {
             l: () => this.handleKeyPress('l'), // Show logs
             q: () => this.handleKeyPress('q'), // Quit
             t: () => this.handleKeyPress('t'), // Show trades
-            v: () => this.handleKeyPress('v'), // View trade details
+            v: () => this.handleKeyPress('v'), // Show trade details
             x: () => this.handleKeyPress('x'), // Show chart / previous chart
             y: () => this.handleKeyPress('y'), // Yes
             z: () => this.handleKeyPress('z') // Cycle charts with open trades

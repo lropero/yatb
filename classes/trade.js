@@ -8,12 +8,12 @@ const { timer } = require('rxjs')
 const { errorToString, millisecondsToTime, timeframeToMilliseconds } = require('../helpers')
 
 class Trade {
-  constructor (advisorId, buy, chartId, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who) {
+  constructor (advisorId, buy, chartId, id, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who) {
     const spent = order.fills.reduce((spent, fill) => spent + parseFloat(fill.qty) * parseFloat(fill.price), 0)
     this.advisorId = advisorId
     this.buy = buy
     this.chartId = chartId
-    this.id = 'T' + order.orderId
+    this.id = id
     this.info = info
     this.isLong = isLong
     this.isOpen = true
@@ -45,12 +45,12 @@ class Trade {
           this.log(error)
         }
       })
-      this.timeToLive = millisecondsToTime(timeToLive)
+      this.timeToLive = timeToLive
     }
     this.updateFunds()
   }
 
-  static initialize ({ advisorId, buy, chartId, exchangeInfo, isLong, log, quantity, sell, show, signal, strategy, stream, symbol, updateFunds, who }) {
+  static initialize ({ advisorId, buy, chartId, exchangeInfo, id, isLong, log, quantity, sell, show, signal, strategy, stream, symbol, updateFunds, who }) {
     return new Promise(async (resolve, reject) => {
       try {
         const info = exchangeInfo.symbols.find((info) => info.symbol === symbol && typeof info.status === 'string')
@@ -62,7 +62,7 @@ class Trade {
         }
         const order = isLong ? await buy(quantity, info) : await sell(quantity, info)
         if (order.orderId && order.fills.length) {
-          const trade = new Trade(advisorId, buy, chartId, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who)
+          const trade = new Trade(advisorId, buy, chartId, id, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who)
           return resolve(trade)
         }
         throw new Error('Order failed')
@@ -73,44 +73,37 @@ class Trade {
     })
   }
 
-  calculateStats () {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const funds = await this.updateFunds()
-        let commission = 0
-        let loss = 0
-        let profit = 0
-        this.orders.map((order) => {
-          if (order.side === 'BUY') {
-            loss += order.fills.reduce((loss, fill) => loss + parseFloat(fill.qty) * parseFloat(fill.price), 0)
-          } else if (order.side === 'SELL') {
-            profit += order.fills.reduce((profit, fill) => profit + parseFloat(fill.qty) * parseFloat(fill.price), 0)
-          }
-          commission += order.fills.reduce((commission, fill) => commission + parseFloat(fill.commission) * funds[fill.commissionAsset].dollarPrice, 0)
-        })
-        const gross = (profit - loss) * (this.info.quoteAsset !== 'USDT' ? funds[this.info.quoteAsset].dollarPrice : 1)
-        const stats = {
-          commission,
-          duration: this.orders[this.orders.length - 1].date - this.orders[0].date,
-          gross,
-          net: gross - commission
+  async calculateStats () {
+    try {
+      const funds = await this.updateFunds()
+      let commission = 0
+      let loss = 0
+      let profit = 0
+      this.orders.map((order) => {
+        if (order.side === 'BUY') {
+          loss += order.fills.reduce((loss, fill) => loss + parseFloat(fill.qty) * parseFloat(fill.price), 0)
+        } else if (order.side === 'SELL') {
+          profit += order.fills.reduce((profit, fill) => profit + parseFloat(fill.qty) * parseFloat(fill.price), 0)
         }
-        return resolve(stats)
-      } catch (error) {
-        return reject(error)
+        commission += order.fills.reduce((commission, fill) => commission + parseFloat(fill.commission) * funds[fill.commissionAsset].dollarPrice, 0)
+      })
+      const gross = (profit - loss) * (this.info.quoteAsset !== 'USDT' ? funds[this.info.quoteAsset].dollarPrice : 1)
+      this.stats = {
+        commission,
+        duration: this.orders[this.orders.length - 1].date - this.orders[0].date,
+        gross,
+        net: gross - commission
       }
-    })
+      this.show()
+    } catch (error) {
+      error.message = `calculateStats(): ${errorToString(error)}`
+      this.log(error)
+    }
   }
 
   close (type) {
     return new Promise(async (resolve, reject) => {
       try {
-        if (!this.info) {
-          throw new Error(`Info not available`)
-        }
-        if (this.info.status !== 'TRADING') {
-          throw new Error(`Not trading, current status: ${this.info.status}`)
-        }
         if (this.stop) {
           this.stop.unsubscribe()
         }
@@ -119,6 +112,12 @@ class Trade {
         }
         if (this.timer) {
           this.timer.unsubscribe()
+        }
+        if (!this.info) {
+          throw new Error(`Info not available`)
+        }
+        if (this.info.status !== 'TRADING') {
+          throw new Error(`Not trading, current status: ${this.info.status}`)
         }
         const order = this.isLong ? await this.sell(this.quantity, this.info) : await this.buy(this.quantity, this.info)
         if (order.orderId && order.fills.length) {
@@ -141,13 +140,13 @@ class Trade {
             date: new Date(),
             ...order
           })
-          this.stats = await this.calculateStats()
           const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
           const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length + 1
           const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
           const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
           this.log({ level: `close${type.charAt(0).toUpperCase() + type.slice(1)}`, message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(decimalPlaces)}` })
           this.show(this.chartId)
+          this.calculateStats()
           return resolve()
         }
         throw new Error('Order failed')
@@ -233,7 +232,8 @@ class Trade {
       }
       return chalk[this.isExpired ? 'blue' : 'yellow'](figures.play)
     }
-    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : ''}`
+    const timeRemaining = this.timeToLive ? new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date() : 0
+    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : (timeRemaining > 0 ? ' ' + chalk.blue(millisecondsToTime(timeRemaining)) : '')}`
   }
 
   updateInfo (exchangeInfo) {

@@ -10,6 +10,8 @@ const { formatMoney } = require('accounting-js')
 const { fromEvent, timer } = require('rxjs')
 const { pretty } = require('js-object-pretty-print')
 
+const { millisecondsToTime } = require('../helpers')
+
 const colors = {
   CHART_BORDER: 'yellow',
   CHART_DRAWING: 'gray',
@@ -341,7 +343,11 @@ class UI {
   renderTrade (trade) {
     if (trade) {
       const { advisorId, buy, chartId, info, log, sell, show, updateFunds, stop, target, timer, ...rest } = trade
-      this.display.setContent(chalk[trade.isOpen ? 'yellow' : 'gray'](pretty(rest, 2)))
+      const timeRemaining = trade.timeToLive ? new Date(trade.orders[0].date.getTime() + trade.timeToLive) - new Date() : 0
+      this.display.setContent(chalk[trade.isOpen ? 'yellow' : 'gray'](pretty(timeRemaining > 0 ? {
+        ...rest,
+        timeRemaining: millisecondsToTime(timeRemaining)
+      } : rest, 2)))
       this.screen.render()
     }
   }
