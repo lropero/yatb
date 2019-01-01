@@ -24,7 +24,7 @@ class Trade {
     }]
     this.price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
     this.profitTarget = parseFloat(strategy.config.profitTarget || 0) / 100
-    this.quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
+    this.quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
     this.sell = sell
     this.show = show
     this.stopLoss = parseFloat(strategy.config.stopLoss || 0) / 100
@@ -36,7 +36,6 @@ class Trade {
     this.setStop(stream)
     this.setTarget(stream)
     this.log({ level: this.isLong ? 'long' : 'short', message: this.toString(true) })
-    this.show(this.chartId)
     const timeToLive = timeframeToMilliseconds(strategy.config.timeToLive || 0)
     if (timeToLive > 0) {
       this.timer = timer(timeToLive).subscribe(async () => {
@@ -234,7 +233,7 @@ class Trade {
       }
       return chalk[this.isExpired ? 'blue' : 'yellow'](figures.play)
     }
-    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(this.stats.gross, { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(this.stats.net, { precision: 3 })) : ''}`
+    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : ''}`
   }
 
   updateInfo (exchangeInfo) {

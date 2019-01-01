@@ -203,6 +203,7 @@ class Bot {
                   who
                 })
                 this.trades.push(trade)
+                this.show(chartId)
                 return resolve()
               } catch (error) {
                 return reject(error)
@@ -231,7 +232,7 @@ class Bot {
       }
       case 'c':
       case 'x': {
-        if (this.currentMode === 'c' || this.currentMode === 'z') {
+        if (['c', 'z'].includes(this.currentMode)) {
           const chartIds = Object.keys(this.charts).filter((chartId) => this.advisors[this.currentAdvisor].chartIds.includes(chartId) && this.charts[chartId].enabled)
           const index = chartIds.findIndex((chartId) => chartId === this.currentChart)
           if (key === 'c') {
@@ -313,7 +314,7 @@ class Bot {
         break
       }
       case 'v': {
-        if (this.currentMode === 'c' || this.currentMode === 'z') {
+        if (['c', 'z'].includes(this.currentMode)) {
           const trade = this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen)
           if (trade) {
             this.currentMode = 'v'
@@ -325,11 +326,11 @@ class Bot {
       case 'y': {
         if (this.quitting) {
           try {
-            const hadOpenTrades = !!this.trades.filter((trade) => trade.isOpen).length
-            await this.closeTrades()
-            if (hadOpenTrades) {
+            this.log({ level: 'info', message: 'Exiting…' })
+            const hasOpenTrades = !!this.trades.filter((trade) => trade.isOpen).length
+            if (hasOpenTrades) {
+              await this.closeTrades()
               await new Promise((resolve, reject) => {
-                this.log({ level: 'info', message: 'Exiting…' })
                 timer(2000).subscribe(() => resolve())
               })
             }
@@ -344,8 +345,8 @@ class Bot {
         const trades = this.trades.filter((trade) => trade.isOpen)
         if (trades.length) {
           const tradeIndex = trades.findIndex((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
-          this.currentAdvisor = trades[(this.currentMode === 'z' && tradeIndex > 0 ? tradeIndex : trades.length) - 1].advisorId
-          this.currentChart = trades[(this.currentMode === 'z' && tradeIndex > 0 ? tradeIndex : trades.length) - 1].chartId
+          this.currentAdvisor = trades[(['c', 'd1', 'd2', 'd3', 'v', 'z'].includes(this.currentMode) && tradeIndex > 0 ? tradeIndex : trades.length) - 1].advisorId
+          this.currentChart = trades[(['c', 'd1', 'd2', 'd3', 'v', 'z'].includes(this.currentMode) && tradeIndex > 0 ? tradeIndex : trades.length) - 1].chartId
           this.currentMode = 'z'
           this.show(this.currentChart)
         }

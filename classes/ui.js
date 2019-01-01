@@ -268,10 +268,10 @@ class UI {
 
   renderData (chart, mode) {
     if ([1, 2, 3].includes(mode)) {
-      let data = []
-      const candles = chart.candles.slice().reverse()
+      let data
       switch (mode) {
         case 1: {
+          const candles = chart.candles.slice().reverse()
           data = candles.reduce((data, candle) => {
             const date = `${format(candle.time, 'DD-MMM h:mma')}${!candle.isFinal ? ' LIVE' : ''}`
             data.push(Object.keys(candle.indicators).length ? {
@@ -287,6 +287,7 @@ class UI {
           break
         }
         case 2: {
+          const candles = chart.candles.slice().reverse()
           data = candles.reduce((data, candle) => {
             const { time, isFinal, indicators, ...rest } = candle
             const date = `${format(candle.time, 'DD-MMM h:mma')}${!isFinal ? ' LIVE' : ''}`
@@ -307,10 +308,8 @@ class UI {
           break
         }
       }
-      if (data.length) {
-        this.display.setContent(pretty(data, 2))
-        this.screen.render()
-      }
+      this.display.setContent(pretty(data, 2))
+      this.screen.render()
     }
   }
 
@@ -341,7 +340,7 @@ class UI {
 
   renderTrade (trade) {
     if (trade) {
-      const { advisorId, buy, chartId, info, log, sell, show, updateFunds, stop, target, ...rest } = trade
+      const { advisorId, buy, chartId, info, log, sell, show, updateFunds, stop, target, timer, ...rest } = trade
       this.display.setContent(chalk[trade.isOpen ? 'yellow' : 'gray'](pretty(rest, 2)))
       this.screen.render()
     }
