@@ -22,20 +22,23 @@ class Log {
         break
       }
       case 'closeStop': {
-        sfx.play('basso')
+        Math.floor(Math.random() * 100) > 0 ? sfx.play('basso') : sfx.say('Poponga la monga sorongo y pepeganga')
         break
       }
       case 'closeTarget': {
-        sfx.play('tink')
+        Math.floor(Math.random() * 100) > 0 ? sfx.play('tink') : sfx.say('Pim pum pim pum pim pum dum dee dum')
         break
       }
       case 'error': {
         beep()
         break
       }
-      case 'long':
+      case 'long': {
+        Math.floor(Math.random() * 100) > 0 ? sfx.play('pop') : sfx.say('che boludo, metí un largo')
+        break
+      }
       case 'short': {
-        sfx.play('pop')
+        Math.floor(Math.random() * 100) > 0 ? sfx.play('pop') : sfx.say('che boludo, metí un corto')
         break
       }
     }

@@ -2,16 +2,17 @@ const chalk = require('chalk')
 const figures = require('figures')
 const { filter, first, tap } = require('rxjs/operators')
 const { format } = require('date-fns')
+const { formatMoney } = require('accounting-js')
 const { timer } = require('rxjs')
 
-const { errorToString, timeframeToMilliseconds } = require('../helpers')
+const { errorToString, millisecondsToTime, timeframeToMilliseconds } = require('../helpers')
 
 class Trade {
-  constructor (advisorId, buy, chartId, funds, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who) {
+  constructor (advisorId, buy, chartId, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who) {
+    const spent = order.fills.reduce((spent, fill) => spent + parseFloat(fill.qty) * parseFloat(fill.price), 0)
     this.advisorId = advisorId
     this.buy = buy
     this.chartId = chartId
-    this.funds = funds
     this.id = 'T' + order.orderId
     this.info = info
     this.isLong = isLong
@@ -19,25 +20,23 @@ class Trade {
     this.log = log
     this.orders = [{
       date: new Date(),
-      order
+      ...order
     }]
     this.price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
     this.profitTarget = parseFloat(strategy.config.profitTarget || 0) / 100
     this.quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
     this.sell = sell
     this.show = show
-    this.spent = order.fills.reduce((spent, fill) => spent + parseFloat(fill.qty) * parseFloat(fill.price), 0)
     this.stopLoss = parseFloat(strategy.config.stopLoss || 0) / 100
-    this.stopPrice = this.price - ((this.spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)
+    this.stopPrice = this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)
     this.strategyName = strategy.name
-    this.targetPrice = this.price + ((this.spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)
+    this.targetPrice = this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)
     this.updateFunds = updateFunds
     this.who = who
     this.setStop(stream)
     this.setTarget(stream)
     this.log({ level: this.isLong ? 'long' : 'short', message: this.toString(true) })
     this.show(this.chartId)
-    this.updateFunds()
     const timeToLive = timeframeToMilliseconds(strategy.config.timeToLive || 0)
     if (timeToLive > 0) {
       this.timer = timer(timeToLive).subscribe(async () => {
@@ -47,10 +46,12 @@ class Trade {
           this.log(error)
         }
       })
+      this.timeToLive = millisecondsToTime(timeToLive)
     }
+    this.updateFunds()
   }
 
-  static initialize ({ advisorId, buy, chartId, exchangeInfo, funds, isLong, log, quantity, sell, show, signal, strategy, stream, symbol, updateFunds, who }) {
+  static initialize ({ advisorId, buy, chartId, exchangeInfo, isLong, log, quantity, sell, show, signal, strategy, stream, symbol, updateFunds, who }) {
     return new Promise(async (resolve, reject) => {
       try {
         const info = exchangeInfo.symbols.find((info) => info.symbol === symbol && typeof info.status === 'string')
@@ -62,7 +63,7 @@ class Trade {
         }
         const order = isLong ? await buy(quantity, info) : await sell(quantity, info)
         if (order.orderId && order.fills.length) {
-          const trade = new Trade(advisorId, buy, chartId, funds, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who)
+          const trade = new Trade(advisorId, buy, chartId, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who)
           return resolve(trade)
         }
         throw new Error('Order failed')
@@ -73,12 +74,33 @@ class Trade {
     })
   }
 
-  // TODO: Calculate more stuff, will be called from this.toString()
-  calculatePnL () {
-    // let commission = 0
-    // this.orders.map(({ order }) => {
-    //   commission += Math.round(order.fills.reduce((commission, fill) => commission + parseFloat(fill.commission) * this.funds[fill.commissionAsset].dollarPrice, 0) * 1000) / 1000
-    // })
+  calculateStats () {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const funds = await this.updateFunds()
+        let commission = 0
+        let loss = 0
+        let profit = 0
+        this.orders.map((order) => {
+          if (order.side === 'BUY') {
+            loss += order.fills.reduce((loss, fill) => loss + parseFloat(fill.qty) * parseFloat(fill.price), 0)
+          } else if (order.side === 'SELL') {
+            profit += order.fills.reduce((profit, fill) => profit + parseFloat(fill.qty) * parseFloat(fill.price), 0)
+          }
+          commission += order.fills.reduce((commission, fill) => commission + parseFloat(fill.commission) * funds[fill.commissionAsset].dollarPrice, 0)
+        })
+        const gross = (profit - loss) * (this.info.quoteAsset !== 'USDT' ? funds[this.info.quoteAsset].dollarPrice : 1)
+        const stats = {
+          commission,
+          duration: this.orders[this.orders.length - 1].date - this.orders[0].date,
+          gross,
+          net: gross - commission
+        }
+        return resolve(stats)
+      } catch (error) {
+        return reject(error)
+      }
+    })
   }
 
   close (type) {
@@ -118,15 +140,15 @@ class Trade {
           }
           this.orders.push({
             date: new Date(),
-            order
+            ...order
           })
+          this.stats = await this.calculateStats()
           const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
           const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length + 1
           const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
           const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
           this.log({ level: `close${type.charAt(0).toUpperCase() + type.slice(1)}`, message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(decimalPlaces)}` })
           this.show(this.chartId)
-          this.updateFunds()
           return resolve()
         }
         throw new Error('Order failed')
@@ -212,7 +234,7 @@ class Trade {
       }
       return chalk[this.isExpired ? 'blue' : 'yellow'](figures.play)
     }
-    return getIcon() + ' ' + chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss')) + ' ' + (this.isOpen ? chalk.white(string) : chalk.gray(string)) + ' ' + chalk.gray(who ? this.who : this.strategyName)
+    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(this.stats.gross, { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(this.stats.net, { precision: 3 })) : ''}`
   }
 
   updateInfo (exchangeInfo) {

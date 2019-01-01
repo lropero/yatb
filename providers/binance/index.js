@@ -1,7 +1,10 @@
 const Binance = require('node-binance-api')
 const Bottleneck = require('bottleneck')
+const writeFile = require('write')
 const { catchError, concat, map, reduce, share, take } = require('rxjs/operators')
+const { format } = require('date-fns')
 const { from, Observable, throwError } = require('rxjs')
+const { pretty } = require('js-object-pretty-print')
 
 const config = require('./config')
 const { errorToString } = require('../../helpers')
@@ -27,8 +30,10 @@ class Provider {
         if (!(quantity > 0)) {
           return reject(new Error('Can\'t buy zero'))
         }
-        this.api.marketBuy(info.symbol, quantity, (error, response) => {
+        this.api.marketBuy(info.symbol, quantity.toFixed(info.quotePrecision), (error, response) => {
           if (error) {
+            const fileName = `${format(new Date(), 'YYYYMMDDHHmmss')}.errorBuy.log`
+            writeFile(fileName, pretty(error, 2), () => {})
             return reject(new Error(`${error.statusMessage || errorToString(error)}`))
           }
           return resolve(response)
@@ -39,11 +44,11 @@ class Provider {
     }))
   }
 
-  clampQuantity (amount, info, isBuying = false) {
+  clampQuantity (amount, info, isLong = false) {
     return new Promise(async (resolve, reject) => {
       try {
         let quantity = amount
-        if (isBuying) {
+        if (isLong) {
           const quote = await this.getQuote(info.symbol)
           const { minNotional } = info.filters.find((filter) => filter.filterType === 'MIN_NOTIONAL')
           const { minQty } = info.filters.find((filter) => filter.filterType === 'LOT_SIZE')
@@ -57,7 +62,7 @@ class Provider {
         }
         const { stepSize } = info.filters.find((filter) => filter.filterType === 'LOT_SIZE')
         quantity = this.api.roundStep(quantity, stepSize)
-        return resolve(quantity)
+        return resolve(parseFloat(quantity))
       } catch (error) {
         return reject(error)
       }
@@ -194,8 +199,10 @@ class Provider {
         if (!(quantity > 0)) {
           return reject(new Error('Can\'t sell zero'))
         }
-        this.api.marketSell(info.symbol, quantity, (error, response) => {
+        this.api.marketSell(info.symbol, quantity.toFixed(info.baseAssetPrecision), (error, response) => {
           if (error) {
+            const fileName = `${format(new Date(), 'YYYYMMDDHHmmss')}.errorSell.log`
+            writeFile(fileName, pretty(error, 2), () => {})
             return reject(new Error(`${error.statusMessage || errorToString(error)}`))
           }
           return resolve(response)

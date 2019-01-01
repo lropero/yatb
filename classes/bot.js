@@ -79,7 +79,7 @@ class Bot {
         const Provider = require(`../providers/${providerId}`)
         this.provider = new Provider()
         this.exchangeInfo = await this.retrieveExchangeInfo()
-        this.funds = await this.retrieveFunds()
+        await this.updateFunds()
         this.log({ level: 'success', message: `Provider ${providerName} connected` })
         return resolve()
       } catch (error) {
@@ -89,20 +89,29 @@ class Bot {
     })
   }
 
-  analyzeChart ({ chartId, candles }) {
+  analyzeChart ({ chartId, candles, isFinal }) {
     Object.keys(this.advisors).map(async (advisorId) => {
       const advisor = this.advisors[advisorId]
       if (advisor.chartIds.includes(chartId)) {
         const chart = this.charts[chartId]
         try {
-          const advices = await Promise.all(advisor.analyzeChart(candles, chart.config.strategies))
-          advices.filter((advice) => advice).map(async (advice) => {
-            await this.digestAdvice({
-              advisorId,
-              chartId,
-              ...advice
-            })
-          })
+          const advices = await Promise.all(advisor.analyze(candles, chart.config.strategies))
+          from(advices.filter((advice) => advice)).pipe(
+            concatMap((advice, index) => new Promise(async (resolve, reject) => {
+              try {
+                await this.digestAdvice({
+                  advisorId,
+                  chartId,
+                  isFinal,
+                  ...advice
+                })
+                return resolve()
+              } catch (error) {
+                this.log(error)
+                return resolve()
+              }
+            }))
+          ).subscribe()
         } catch (error) {
           this.log(error)
         }
@@ -124,7 +133,7 @@ class Bot {
 
   digestAdvice (advice) {
     return new Promise(async (resolve, reject) => {
-      const { advisorId, chartId, signal, strategy } = advice
+      const { advisorId, chartId, isFinal, signal, strategy } = advice
       const advisor = this.advisors[advisorId]
       const chart = this.charts[chartId]
       const who = `${advisor.name}->${chart.name}->${strategy.name}`
@@ -135,70 +144,75 @@ class Bot {
           if (trade && ((signal === 'CLOSE LONG' && trade.isLong) || (signal === 'CLOSE SHORT' && !trade.isLong))) {
             try {
               await trade.close('signal')
+              return resolve()
             } catch (error) {
-              this.log(error)
+              return reject(error)
             }
           }
           break
         }
         case 'LONG':
         case 'SHORT': {
-          const isLong = signal === 'LONG'
-          const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
-          const amount = ((this.funds[asset] && this.funds[asset].available) || 0) * advisor.margin
-          const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
-          if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
-            try {
-              const trade = await Trade.initialize({
-                advisorId,
-                buy: (quantity, info) => new Promise(async (resolve, reject) => {
-                  try {
-                    const order = await this.provider.buy(quantity, info)
-                    return resolve(order)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                chartId,
-                exchangeInfo: this.exchangeInfo,
-                funds: this.funds,
-                isLong,
-                log: (event) => this.log(event),
-                quantity,
-                sell: (quantity, info) => new Promise(async (resolve, reject) => {
-                  try {
-                    const order = this.provider.sell(quantity, info)
-                    return resolve(order)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                show: (chartId) => this.show(chartId),
-                signal,
-                strategy,
-                stream: chart.stream,
-                symbol: chart.config.symbol,
-                updateFunds: async () => {
-                  try {
-                    this.funds = await this.retrieveFunds(true)
-                    if (this.currentMode === 'f') {
-                      this.show()
+          if (isFinal) {
+            const isLong = signal === 'LONG'
+            const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
+            const longsSellingBackAsset = this.trades.filter((trade) => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
+            const shortsSellingBackAsset = this.trades.filter((trade) => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
+            const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
+            const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
+            const amount = funds * advisor.margin
+            const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
+            if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
+              try {
+                const trade = await Trade.initialize({
+                  advisorId,
+                  buy: (quantity, info) => new Promise(async (resolve, reject) => {
+                    try {
+                      const order = await this.provider.buy(quantity, info)
+                      return resolve(order)
+                    } catch (error) {
+                      return reject(error)
                     }
-                  } catch (error) {
-                    this.log({ level: 'silent', message: 'Couldn\'t update funds' })
-                  }
-                },
-                who
-              })
-              this.trades.push(trade)
-            } catch (error) {
-              this.log({ level: 'silent', message: errorToString(error) })
+                  }),
+                  chartId,
+                  exchangeInfo: this.exchangeInfo,
+                  isLong,
+                  log: (event) => this.log(event),
+                  quantity,
+                  sell: (quantity, info) => new Promise(async (resolve, reject) => {
+                    try {
+                      const order = this.provider.sell(quantity, info)
+                      return resolve(order)
+                    } catch (error) {
+                      return reject(error)
+                    }
+                  }),
+                  show: (chartId) => this.show(chartId),
+                  signal,
+                  strategy,
+                  stream: chart.stream,
+                  symbol: chart.config.symbol,
+                  updateFunds: () => new Promise(async (resolve, reject) => {
+                    try {
+                      const funds = await this.updateFunds(true)
+                      return resolve(funds)
+                    } catch (error) {
+                      return reject(error)
+                    }
+                  }),
+                  who
+                })
+                this.trades.push(trade)
+                return resolve()
+              } catch (error) {
+                return reject(error)
+              }
             }
           }
           break
         }
+        default: return resolve()
       }
-      return resolve()
     })
   }
 
@@ -282,24 +296,43 @@ class Bot {
         break
       }
       case 't': {
-        if (this.currentMode === 't') {
-          if (this.trades.length - (this.readMore || 0) > Math.ceil(this.ui.screen.rows * 0.8) - 1) {
-            if (!this.readMore) {
-              this.readMore = 0
+        if (this.trades.length) {
+          if (this.currentMode === 't') {
+            if (this.trades.length - (this.readMore || 0) > Math.ceil(this.ui.screen.rows * 0.8) - 1) {
+              if (!this.readMore) {
+                this.readMore = 0
+              }
+              this.readMore++
             }
-            this.readMore++
+          } else {
+            this.currentMode = 't'
+            delete this.readMore
           }
-        } else {
-          this.currentMode = 't'
-          delete this.readMore
+          this.show()
         }
-        this.show()
+        break
+      }
+      case 'v': {
+        if (this.currentMode === 'c' || this.currentMode === 'z') {
+          const trade = this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen)
+          if (trade) {
+            this.currentMode = 'v'
+            this.show()
+          }
+        }
         break
       }
       case 'y': {
         if (this.quitting) {
           try {
+            const hadOpenTrades = !!this.trades.filter((trade) => trade.isOpen).length
             await this.closeTrades()
+            if (hadOpenTrades) {
+              await new Promise((resolve, reject) => {
+                this.log({ level: 'info', message: 'Exiting…' })
+                timer(2000).subscribe(() => resolve())
+              })
+            }
             process.exit()
           } catch (error) {
             this.log(error)
@@ -311,8 +344,8 @@ class Bot {
         const trades = this.trades.filter((trade) => trade.isOpen)
         if (trades.length) {
           const tradeIndex = trades.findIndex((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
-          this.currentAdvisor = trades[(tradeIndex > 0 ? tradeIndex : trades.length) - 1].advisorId
-          this.currentChart = trades[(tradeIndex > 0 ? tradeIndex : trades.length) - 1].chartId
+          this.currentAdvisor = trades[(this.currentMode === 'z' && tradeIndex > 0 ? tradeIndex : trades.length) - 1].advisorId
+          this.currentChart = trades[(this.currentMode === 'z' && tradeIndex > 0 ? tradeIndex : trades.length) - 1].chartId
           this.currentMode = 'z'
           this.show(this.currentChart)
         }
@@ -366,9 +399,10 @@ class Bot {
             l: () => this.handleKeyPress('l'), // Show logs
             q: () => this.handleKeyPress('q'), // Quit
             t: () => this.handleKeyPress('t'), // Show trades
+            v: () => this.handleKeyPress('v'), // View trade details
             x: () => this.handleKeyPress('x'), // Show chart / previous chart
             y: () => this.handleKeyPress('y'), // Yes
-            z: () => this.handleKeyPress('z') // Cycle traded charts
+            z: () => this.handleKeyPress('z') // Cycle charts with open trades
           },
           getEstimatedValue: () => Object.keys(this.funds).reduce((estimatedValue, asset) => {
             if (this.funds[asset].dollarPrice) {
@@ -491,6 +525,7 @@ class Bot {
         case 'l': return this.ui.renderLogs(this.logs.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
         case 'q': return !chartId && this.ui.renderQuit()
         case 't': return this.ui.renderTrades(this.trades.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
+        case 'v': return this.ui.renderTrade(this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart))
       }
     }
   }
@@ -504,6 +539,20 @@ class Bot {
     }
   }
 
+  updateFunds (updatePrices = false) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        this.funds = await this.retrieveFunds(updatePrices)
+        if (this.currentMode === 'f') {
+          this.show()
+        }
+        return resolve(this.funds)
+      } catch (error) {
+        return reject(error)
+      }
+    })
+  }
+
   async updateTimer () {
     try {
       this.exchangeInfo = await this.retrieveExchangeInfo()
@@ -513,10 +562,7 @@ class Bot {
       this.trades.filter((trade) => trade.isOpen).map((trade) => {
         trade.updateInfo(this.exchangeInfo)
       })
-      this.funds = await this.retrieveFunds(true)
-      if (this.currentMode === 'f') {
-        this.show()
-      }
+      await this.updateFunds(true)
       this.log({ level: 'silent', message: 'Server info updated' })
       timer(1000 * 60 * 30).subscribe(() => this.updateTimer())
     } catch (error) {

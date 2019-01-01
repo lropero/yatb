@@ -79,8 +79,8 @@ class Chart {
             candles[candles.length - 1] = candle
           }
           this.candles = await withIndicators(candles, this.config.indicators || {})
-          if (candle.isFinal && this.config.strategies) {
-            this.notifications.next({ type: 'candlesReady', payload: { chartId: this.id, candles: this.candles.slice().reverse() } })
+          if (this.config.strategies) {
+            this.notifications.next({ type: 'candlesReady', payload: { chartId: this.id, candles: this.candles.slice().reverse(), isFinal: candle.isFinal } })
           }
         }
         this.show(this.id)

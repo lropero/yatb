@@ -2,6 +2,8 @@
 *Potatoes and black holes*
 
 ### Installation
+Node v9.11.2
+Yarn v1.12.3
 ```sh
 $ yarn
 ```

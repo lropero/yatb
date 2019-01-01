@@ -13,17 +13,17 @@ function calculateFunds (balances, prices) {
     if (asset === 'BTC') {
       funds[asset] = {
         ...fundsWithoutDollarPrice[asset],
-        dollarPrice: fundsWithoutDollarPrice[asset].available * parseFloat(prices.BTCUSDT || 0)
+        dollarPrice: parseFloat(fundsWithoutDollarPrice[asset].available * parseFloat(prices.BTCUSDT || 0))
       }
     } else if (asset === 'USDT') {
       funds[asset] = {
         ...fundsWithoutDollarPrice[asset],
-        dollarPrice: fundsWithoutDollarPrice[asset].available
+        dollarPrice: parseFloat(fundsWithoutDollarPrice[asset].available)
       }
     } else if (prices[`${asset}BTC`]) {
       funds[asset] = {
         ...fundsWithoutDollarPrice[asset],
-        dollarPrice: fundsWithoutDollarPrice[asset].available * parseFloat(prices[`${asset}BTC`]) * parseFloat(prices.BTCUSDT || 0)
+        dollarPrice: parseFloat(fundsWithoutDollarPrice[asset].available * parseFloat(prices[`${asset}BTC`]) * parseFloat(prices.BTCUSDT || 0))
       }
     }
     return funds

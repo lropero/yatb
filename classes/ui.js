@@ -6,6 +6,7 @@ const figures = require('figures')
 const stripAnsi = require('strip-ansi')
 const { debounce } = require('rxjs/operators')
 const { format } = require('date-fns')
+const { formatMoney } = require('accounting-js')
 const { fromEvent, timer } = require('rxjs')
 const { pretty } = require('js-object-pretty-print')
 
@@ -86,7 +87,7 @@ class UI {
     this.footerLeft.on('mouseover', () => {
       const estimatedValue = getEstimatedValue()
       if (parseFloat(estimatedValue) > 0) {
-        this.footerLeft.setContent(` Estimated value: $${Math.round(estimatedValue * 100) / 100}`)
+        this.footerLeft.setContent(` Estimated value: ${formatMoney(estimatedValue, { precision: 3 })}`)
         this.screen.render()
         setTimeout(() => {
           this.footerLeft.setContent(` ${this.screen.title}`)
@@ -267,7 +268,7 @@ class UI {
 
   renderData (chart, mode) {
     if ([1, 2, 3].includes(mode)) {
-      let data
+      let data = []
       const candles = chart.candles.slice().reverse()
       switch (mode) {
         case 1: {
@@ -287,7 +288,7 @@ class UI {
         }
         case 2: {
           data = candles.reduce((data, candle) => {
-            let { time, isFinal, indicators, ...rest } = candle
+            const { time, isFinal, indicators, ...rest } = candle
             const date = `${format(candle.time, 'DD-MMM h:mma')}${!isFinal ? ' LIVE' : ''}`
             data.push(Object.keys(indicators).length ? {
               time: date,
@@ -306,8 +307,10 @@ class UI {
           break
         }
       }
-      this.display.setContent(pretty(data, 2))
-      this.screen.render()
+      if (data.length) {
+        this.display.setContent(pretty(data, 2))
+        this.screen.render()
+      }
     }
   }
 
@@ -319,14 +322,16 @@ class UI {
         }
         return estimatedValue
       }, 0)
-      this.display.setContent(`${chalk[colors.FUNDS_TITLE](`Estimated value: $${Math.round(estimatedValue * 100) / 100}`)}\n` + Object.keys(funds).sort().map((asset) => `${chalk[colors.FUNDS_ASSET](asset)} ${chalk[colors.FUNDS_AVAILABLE](funds[asset].available)}${parseFloat(funds[asset].onOrder) > 0 ? ' ' + chalk[colors.FUNDS_ORDER](funds[asset].onOrder) : ''}${parseFloat(funds[asset].dollarPrice) > 0 ? ' ' + chalk[colors.FUNDS_DOLLAR](`$${Math.round(funds[asset].dollarPrice * 100) / 100}`) : ''}`).join('\n'))
+      this.display.setContent(`${chalk[colors.FUNDS_TITLE](`Estimated value: ${formatMoney(estimatedValue, { precision: 3 })}`)}\n` + Object.keys(funds).sort().map((asset) => `${chalk[colors.FUNDS_ASSET](asset)} ${chalk[colors.FUNDS_AVAILABLE](funds[asset].available)}${funds[asset].onOrder > 0 ? ' ' + chalk[colors.FUNDS_ORDER](funds[asset].onOrder) : ''}${funds[asset].dollarPrice > 0 ? ' ' + chalk[colors.FUNDS_DOLLAR](formatMoney(funds[asset].dollarPrice, { precision: 3 })) : ''}`).join('\n'))
       this.screen.render()
     }
   }
 
   renderLogs (logs) {
-    this.display.setContent(logs.map((log) => log.toString(true)).join('\n'))
-    this.screen.render()
+    if (logs.length) {
+      this.display.setContent(logs.map((log) => log.toString(true)).join('\n'))
+      this.screen.render()
+    }
   }
 
   renderQuit () {
@@ -334,13 +339,19 @@ class UI {
     this.screen.render()
   }
 
+  renderTrade (trade) {
+    if (trade) {
+      const { advisorId, buy, chartId, info, log, sell, show, updateFunds, stop, target, ...rest } = trade
+      this.display.setContent(chalk[trade.isOpen ? 'yellow' : 'gray'](pretty(rest, 2)))
+      this.screen.render()
+    }
+  }
+
   renderTrades (trades) {
     if (trades.length) {
       this.display.setContent(trades.map((trade) => trade.toString()).join('\n'))
-    } else {
-      this.display.setContent(chalk.white('No trades') + ' ' + chalk.gray(':('))
+      this.screen.render()
     }
-    this.screen.render()
   }
 }
 

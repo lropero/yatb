@@ -6,9 +6,9 @@ function filterIndicators (object, index) {
   if (Array.isArray(object)) {
     return object[index] ? object[index] : null
   }
-  return Object.keys(object).reduce((accumulator, key) => {
-    accumulator[key] = filterIndicators(object[key], index)
-    return accumulator
+  return Object.keys(object).reduce((acc, key) => {
+    acc[key] = filterIndicators(object[key], index)
+    return acc
   }, {})
 }
 

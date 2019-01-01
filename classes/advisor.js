@@ -80,7 +80,7 @@ class Advisor {
     })
   }
 
-  analyzeChart (candles, strategies) {
+  analyze (candles, strategies) {
     return Object.keys(strategies).map((strategyId) => new Promise(async (resolve, reject) => {
       try {
         const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()

@@ -1,18 +1,18 @@
 module.exports = {
-  margin: '10%',
+  margin: '30%',
   sights: [
     {
       symbol: 'BTCUSDT',
       timeframe: '1m',
       strategies: {
+        'tazv': {
+          profitTarget: '1%',
+          stopLoss: '1%'
+        },
         'vsa': {
           profitTarget: '2%',
           stopLoss: '2%',
           timeToLive: '30m'
-        },
-        'tazv': {
-          profitTarget: '1%',
-          stopLoss: '1%'
         }
       }
     },
@@ -20,6 +20,10 @@ module.exports = {
       symbol: 'BTCUSDT',
       timeframe: '15m',
       strategies: {
+        'tazv': {
+          profitTarget: '3%',
+          stopLoss: '2%'
+        },
         'vsa': {
           profitTarget: '3%',
           stopLoss: '2%',
@@ -48,7 +52,7 @@ module.exports = {
     },
     {
       symbol: 'ETHBTC',
-      timeframe: '3m',
+      timeframe: '5m',
       strategies: {
         'taz': {
           profitTarget: '2%',
@@ -63,7 +67,7 @@ module.exports = {
     },
     {
       symbol: 'XRPBTC',
-      timeframe: '5m',
+      timeframe: '3m',
       strategies: {
         'tazv': {
           profitTarget: '2%',
