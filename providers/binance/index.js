@@ -32,7 +32,7 @@ class Provider {
         }
         this.api.marketBuy(info.symbol, quantity.toFixed(info.quotePrecision), (error, response) => {
           if (error) {
-            const fileName = `${format(new Date(), 'YYYYMMDDHHmmss')}.errorBuy.log`
+            const fileName = `errorBuy.${format(new Date(), 'YYYYMMDDHHmmss')}.log`
             writeFile(fileName, pretty(error, 2), () => {})
             return reject(new Error(`${error.statusMessage || errorToString(error)}`))
           }
@@ -201,7 +201,7 @@ class Provider {
         }
         this.api.marketSell(info.symbol, quantity.toFixed(info.baseAssetPrecision), (error, response) => {
           if (error) {
-            const fileName = `${format(new Date(), 'YYYYMMDDHHmmss')}.errorSell.log`
+            const fileName = `errorSell.${format(new Date(), 'YYYYMMDDHHmmss')}.log`
             writeFile(fileName, pretty(error, 2), () => {})
             return reject(new Error(`${error.statusMessage || errorToString(error)}`))
           }
