@@ -5,9 +5,9 @@
 const config = require('./config')
 
 class Strategy {
-  static analyze (candles) {
+  static analyze (candles, isFinal) {
     return new Promise((resolve, reject) => {
-      if (candles.length < 2) {
+      if (candles.length < 2 || !isFinal) {
         return resolve()
       }
       const { indicators: { bands } } = candles[0]

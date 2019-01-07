@@ -4,21 +4,25 @@
  */
 
 class Strategy {
-  static analyze (candles) {
+  static analyze (candles, isFinal) {
     return new Promise((resolve, reject) => {
-      if (candles.length < 3) {
+      if (candles.length < 3 || !isFinal) {
         return resolve()
       }
-      if (candles[0].close < candles[1].low && candles[1].close < candles[2].low) { // Price moving down
-        if (candles[0].volume > candles[1].volume && candles[0].volume > candles[2].volume) { // Volume larger than previous 2 volumes
-          if ((candles[0].close - candles[0].low) / (candles[0].high - candles[0].low) > 0.5) { // Price rejection
-            return resolve('LONG')
+      if (candles[0].low === Math.min(...(candles.slice(0, Math.min(20, candles.length)).map((candle) => candle.low)))) { // Last candle is a local low
+        if (candles[0].volume === Math.max(...(candles.slice(0, Math.min(10, candles.length)).map((candle) => candle.volume)))) { // Volume larger than previous candles
+          if (candles[0].range === Math.max(...(candles.slice(0, Math.min(10, candles.length)).map((candle) => candle.range)))) { // Range larger than previous candles
+            if ((candles[0].close - candles[0].low) / (candles[0].high - candles[0].low) > 0.5) { // Price rejection
+              return resolve('LONG')
+            }
           }
         }
-      } else if (candles[0].close > candles[1].high && candles[1].close > candles[2].high) { // Price moving up
-        if (candles[0].volume > candles[1].volume && candles[0].volume > candles[2].volume) { // Volume larger than previous 2 volumes
-          if ((candles[0].high - candles[0].close) / (candles[0].high - candles[0].low) > 0.5) { // Price rejection
-            return resolve('SHORT')
+      } else if (candles[0].high === Math.max(...(candles.slice(0, Math.min(20, candles.length)).map((candle) => candle.high)))) { // Last candle is a local high
+        if (candles[0].volume === Math.max(...(candles.slice(0, Math.min(10, candles.length)).map((candle) => candle.volume)))) { // Volume larger than previous candles
+          if (candles[0].range === Math.max(...(candles.slice(0, Math.min(10, candles.length)).map((candle) => candle.range)))) { // Range larger than previous candles
+            if ((candles[0].high - candles[0].close) / (candles[0].high - candles[0].low) > 0.5) { // Price rejection
+              return resolve('SHORT')
+            }
           }
         }
       }

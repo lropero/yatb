@@ -1,18 +1,25 @@
 module.exports = {
-  margin: '30%',
+  margin: '50%',
   sights: [
     {
       symbol: 'BTCUSDT',
       timeframe: '1m',
       strategies: {
-        'tazv': {
-          profitTarget: '1%',
-          stopLoss: '1%'
-        },
         'vsa': {
           profitTarget: '2%',
-          stopLoss: '2%',
+          stopLoss: '1%',
           timeToLive: '30m'
+        }
+      }
+    },
+    {
+      symbol: 'BTCUSDT',
+      timeframe: '5m',
+      strategies: {
+        'vsa': {
+          profitTarget: '2%',
+          stopLoss: '1%',
+          timeToLive: '1h'
         }
       }
     },
@@ -20,10 +27,6 @@ module.exports = {
       symbol: 'BTCUSDT',
       timeframe: '15m',
       strategies: {
-        'tazv': {
-          profitTarget: '3%',
-          stopLoss: '2%'
-        },
         'vsa': {
           profitTarget: '3%',
           stopLoss: '2%',
@@ -44,34 +47,33 @@ module.exports = {
     },
     {
       symbol: 'BTCUSDT',
-      timeframe: '6h'
+      timeframe: '6h',
+      strategies: {
+        'vsa': {
+          profitTarget: '5%',
+          stopLoss: '2%',
+          timeToLive: '1d'
+        }
+      }
     },
     {
       symbol: 'BTCUSDT',
-      timeframe: '1d'
+      timeframe: '1d',
+      strategies: {
+        'vsa': {
+          profitTarget: '5%',
+          stopLoss: '2%'
+        }
+      }
     },
     {
       symbol: 'ETHBTC',
       timeframe: '5m',
       strategies: {
-        'taz': {
-          profitTarget: '2%',
-          stopLoss: '2%'
-        },
         'vsa': {
           profitTarget: '2%',
-          stopLoss: '2%',
+          stopLoss: '1%',
           timeToLive: '1h'
-        }
-      }
-    },
-    {
-      symbol: 'XRPBTC',
-      timeframe: '3m',
-      strategies: {
-        'tazv': {
-          profitTarget: '2%',
-          stopLoss: '2%'
         }
       }
     }

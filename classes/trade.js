@@ -9,6 +9,8 @@ const { errorToString, millisecondsToTime, timeframeToMilliseconds } = require('
 
 class Trade {
   constructor (advisorId, buy, chartId, id, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who) {
+    const { tickSize } = info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
+    const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
     const spent = order.fills.reduce((spent, fill) => spent + parseFloat(fill.qty) * parseFloat(fill.price), 0)
     this.advisorId = advisorId
     this.buy = buy
@@ -22,15 +24,15 @@ class Trade {
       date: new Date(),
       ...order
     }]
-    this.price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
+    this.price = parseFloat((order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length).toFixed(decimalPlaces))
     this.profitTarget = parseFloat(strategy.config.profitTarget || 0) / 100
     this.quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
     this.sell = sell
     this.show = show
     this.stopLoss = parseFloat(strategy.config.stopLoss || 0) / 100
-    this.stopPrice = this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)
+    this.stopPrice = parseFloat((this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(decimalPlaces))
     this.strategyName = strategy.name
-    this.targetPrice = this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)
+    this.targetPrice = parseFloat((this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(decimalPlaces))
     this.updateFunds = updateFunds
     this.who = who
     this.setStop(stream)
@@ -104,6 +106,9 @@ class Trade {
   close (type) {
     return new Promise(async (resolve, reject) => {
       try {
+        if (!this.isOpen) {
+          return resolve()
+        }
         if (this.stop) {
           this.stop.unsubscribe()
         }
@@ -141,11 +146,11 @@ class Trade {
             ...order
           })
           const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
-          const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length + 1
+          const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
           const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
-          const quantity = order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0)
+          const quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
           this.log({ level: `close${type.charAt(0).toUpperCase() + type.slice(1)}`, message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(decimalPlaces)}` })
-          this.show(this.chartId)
+          this.show()
           this.calculateStats()
           return resolve()
         }
@@ -168,6 +173,17 @@ class Trade {
     if (this.isOpen) {
       this.setStop(stream)
       this.setTarget(stream)
+      if (this.timeToLive > 0) {
+        this.timer.unsubscribe()
+        const timeRemaining = new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date()
+        this.timer = timer(timeRemaining).subscribe(async () => {
+          try {
+            await this.close('expire')
+          } catch (error) {
+            this.log(error)
+          }
+        })
+      }
     }
   }
 
@@ -218,9 +234,7 @@ class Trade {
   }
 
   toString (log = false, who = true) {
-    const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
-    const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length + 1
-    const string = `${chalk.underline(this.id)} ${this.info.symbol} ${this.quantity}${chalk[this.isOpen ? 'cyan' : 'gray']('@')}${this.price.toFixed(decimalPlaces)} ${chalk[this.isOpen ? 'green' : 'gray']('TRGT ' + this.targetPrice.toFixed(decimalPlaces))} ${chalk[this.isOpen ? 'red' : 'gray']('STOP ' + this.stopPrice.toFixed(decimalPlaces))}`
+    const string = `${chalk.underline(this.id)} ${this.info.symbol} ${this.quantity}${chalk[this.isOpen ? 'cyan' : 'gray']('@')}${this.price} ${chalk[this.isOpen ? 'green' : 'gray']('TRGT ' + this.targetPrice)} ${chalk[this.isOpen ? 'red' : 'gray']('STOP ' + this.stopPrice)}`
     if (log) {
       return `${string} #avoidBlack${this.who}#`
     }
@@ -233,7 +247,7 @@ class Trade {
       return chalk[this.isExpired ? 'blue' : 'yellow'](figures.play)
     }
     const timeRemaining = this.timeToLive ? new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date() : 0
-    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : (timeRemaining > 0 ? ' ' + chalk.blue(millisecondsToTime(timeRemaining)) : '')}`
+    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : (this.isOpen && timeRemaining > 0 ? ' ' + chalk.blue(millisecondsToTime(timeRemaining)) : '')}`
   }
 
   updateInfo (exchangeInfo) {

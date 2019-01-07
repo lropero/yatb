@@ -142,7 +142,7 @@ class UI {
   renderChart (advisor, chart, trade) {
     const { close: quote, direction = '' } = chart.candles[chart.candles.length - 1]
     const { tickSize } = chart.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
-    const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length + 1
+    const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
     const candles = chart.candles.slice(Math.max(chart.candles.length - this.screen.cols + quote.toString().split('.')[0].length + decimalPlaces + 3, 0))
     let quoteColor = colors.CHART_PRICE_NEW_CANDLE
     if (direction.length) {
@@ -306,7 +306,8 @@ class UI {
           break
         }
         case 3: {
-          data = chart.config.strategies ? Object.assign({}, { strategies: chart.config.strategies }, chart.info) : chart.info
+          const { orderTypes, ...rest } = chart.info
+          data = chart.config.strategies ? Object.assign({}, { strategies: chart.config.strategies }, rest) : rest
           break
         }
       }

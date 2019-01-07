@@ -141,7 +141,8 @@ class Chart {
         if (!this.info) {
           throw new Error(`Info not available`)
         }
-        const stream = await this.retrieveStream(this.config)
+        const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
+        const stream = await this.retrieveStream(this.config, tickSize)
         this.enable(stream)
         return resolve()
       } catch (error) {

@@ -80,7 +80,7 @@ class Advisor {
     })
   }
 
-  analyze (candles, strategies) {
+  analyze (candles, strategies, isFinal) {
     return Object.keys(strategies).map((strategyId) => new Promise(async (resolve, reject) => {
       try {
         const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
@@ -89,7 +89,7 @@ class Advisor {
         }
         delete require.cache[require.resolve(`../strategies/${strategyId}`)]
         const Strategy = require(`../strategies/${strategyId}`)
-        const signal = await Strategy.analyze(candles)
+        const signal = await Strategy.analyze(candles, isFinal)
         if (typeof signal === 'string' && signal.length) {
           return resolve({
             signal,

@@ -32,7 +32,7 @@ class Provider {
         }
         this.api.marketBuy(info.symbol, quantity.toFixed(info.quotePrecision), (error, response) => {
           if (error) {
-            const fileName = `errorBuy.${format(new Date(), 'YYYYMMDDHHmmss')}.log`
+            const fileName = `logs/errorBuy.${format(new Date(), 'YYYYMMDDHHmmss')}.log`
             writeFile(fileName, pretty(error, 2), () => {})
             return reject(new Error(`${error.statusMessage || errorToString(error)}`))
           }
@@ -129,7 +129,7 @@ class Provider {
     }))
   }
 
-  retrieveStream (chartConfig) {
+  retrieveStream (chartConfig, tickSize) {
     const PERIODS = 500
     return this.limiter.schedule(() => new Promise((resolve, reject) => {
       try {
@@ -137,6 +137,7 @@ class Provider {
           if (error) {
             return reject(new Error(`${error.statusMessage || errorToString(error)}`))
           }
+          const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
           const stream = from(candlesticks).pipe(
             take(PERIODS),
             map((candlestick) => {
@@ -147,6 +148,7 @@ class Provider {
                 high: parseFloat(high),
                 low: parseFloat(low),
                 close: parseFloat(close),
+                range: parseFloat(((parseFloat(high) - parseFloat(low)) / parseFloat(tickSize)).toFixed(decimalPlaces)),
                 volume: parseFloat(volume),
                 closeTime,
                 assetVolume: parseFloat(assetVolume),
@@ -170,6 +172,7 @@ class Provider {
                   high: parseFloat(candle.h),
                   low: parseFloat(candle.l),
                   close: parseFloat(candle.c),
+                  range: parseFloat(((parseFloat(candle.h) - parseFloat(candle.l)) / parseFloat(tickSize)).toFixed(decimalPlaces)),
                   volume: parseFloat(candle.v),
                   closeTime: candle.T,
                   assetVolume: parseFloat(candle.q),
@@ -201,7 +204,7 @@ class Provider {
         }
         this.api.marketSell(info.symbol, quantity.toFixed(info.baseAssetPrecision), (error, response) => {
           if (error) {
-            const fileName = `errorSell.${format(new Date(), 'YYYYMMDDHHmmss')}.log`
+            const fileName = `logs/errorSell.${format(new Date(), 'YYYYMMDDHHmmss')}.log`
             writeFile(fileName, pretty(error, 2), () => {})
             return reject(new Error(`${error.statusMessage || errorToString(error)}`))
           }
