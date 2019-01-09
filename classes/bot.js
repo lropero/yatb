@@ -121,85 +121,21 @@ class Bot {
 
   digestAdvice (advice) {
     return new Promise(async (resolve, reject) => {
-      const { advisorId, chartId, signal, strategy } = advice
-      const advisor = this.advisors[advisorId]
-      const chart = this.charts[chartId]
-      const who = `${advisor.name}->${chart.name}->${strategy.name}`
-      switch (signal) {
-        case 'CLOSE LONG':
-        case 'CLOSE SHORT': {
-          const trade = this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.who === who && trade.isOpen)
-          if (trade && ((signal === 'CLOSE LONG' && trade.isLong) || (signal === 'CLOSE SHORT' && !trade.isLong))) {
+      try {
+        const { signals, ...rest } = advice
+        await forkJoin(from(signals).pipe(
+          concatMap((signal) => new Promise(async (resolve, reject) => {
             try {
-              await trade.close('signal')
+              await this.processSignal(signal, rest)
               return resolve()
             } catch (error) {
               return reject(error)
             }
-          }
-          break
-        }
-        case 'LONG':
-        case 'SHORT': {
-          const isLong = signal === 'LONG'
-          const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
-          const longsSellingBackAsset = this.trades.filter((trade) => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
-          const shortsSellingBackAsset = this.trades.filter((trade) => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
-          const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
-          const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
-          const amount = funds * advisor.margin
-          const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
-          if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
-            try {
-              const trade = await Trade.initialize({
-                advisorId,
-                buy: (quantity, info) => new Promise(async (resolve, reject) => {
-                  try {
-                    const order = await this.provider.buy(quantity, info)
-                    return resolve(order)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                chartId,
-                exchangeInfo: this.exchangeInfo,
-                id: `T${this.trades.length + 1}`,
-                isLong,
-                log: (event) => this.log(event),
-                quantity,
-                sell: (quantity, info) => new Promise(async (resolve, reject) => {
-                  try {
-                    const order = this.provider.sell(quantity, info)
-                    return resolve(order)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                show: () => this.show(),
-                signal,
-                strategy,
-                stream: chart.stream,
-                symbol: chart.config.symbol,
-                updateFunds: () => new Promise(async (resolve, reject) => {
-                  try {
-                    const funds = await this.updateFunds(true)
-                    return resolve(funds)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                who
-              })
-              this.trades.push(trade)
-              this.show()
-              return resolve()
-            } catch (error) {
-              return reject(error)
-            }
-          }
-          break
-        }
-        default: return resolve()
+          }))
+        )).toPromise()
+        return resolve()
+      } catch (error) {
+        return reject(error)
       }
     })
   }
@@ -262,6 +198,13 @@ class Bot {
         this.show()
         break
       }
+      case 'k': {
+        if (this.trades.length) {
+          this.currentMode = 'k'
+          this.show()
+        }
+        break
+      }
       case 'l': {
         if (this.currentMode === 'l') {
           if (this.logs.length - (this.readMore || 0) > Math.ceil(this.ui.screen.rows * 0.8) - 1) {
@@ -279,7 +222,6 @@ class Bot {
       }
       case 'q': {
         this.currentMode = 'q'
-        this.quitting = true
         this.show()
         break
       }
@@ -311,19 +253,26 @@ class Bot {
         break
       }
       case 'y': {
-        if (this.quitting) {
-          try {
-            this.log({ level: 'info', message: 'Exiting…' })
-            const hasOpenTrades = !!this.trades.filter((trade) => trade.isOpen).length
-            if (hasOpenTrades) {
-              await this.closeTrades()
-              await new Promise((resolve, reject) => {
-                timer(3000).subscribe(() => resolve())
-              })
+        switch (this.currentMode) {
+          case 'k': {
+            try {
+              this.currentMode = 't'
+              this.show()
+              this.closeTrades()
+            } catch (error) {
+              this.log(error)
             }
-            process.exit()
-          } catch (error) {
-            this.log(error)
+            break
+          }
+          case 'q': {
+            try {
+              this.log({ level: 'info', message: 'Exiting…' })
+              await this.closeTrades()
+              process.exit()
+            } catch (error) {
+              this.log(error)
+            }
+            break
           }
         }
         break
@@ -340,9 +289,6 @@ class Bot {
         break
       }
     }
-    if (this.quitting && this.currentMode !== 'q') {
-      delete this.quitting
-    }
   }
 
   async initialize (config) {
@@ -356,11 +302,12 @@ class Bot {
       }
       await this.addProvider(providerId)
       this.notifications.subscribe((notification) => this.processNotification(notification))
+      timer(1000 * 60 * 30).subscribe(() => this.updateTimer())
       if (!Array.isArray(advisorIds)) {
         this.log(new Error('Advisors not properly configured'))
         advisorIds = []
       }
-      forkJoin(from(advisorIds).pipe(
+      await forkJoin(from(advisorIds).pipe(
         concatMap((advisorId, index) => new Promise(async (resolve, reject) => {
           try {
             if (typeof advisorId !== 'string' || !advisorId.length) {
@@ -373,50 +320,49 @@ class Bot {
             return resolve()
           }
         }))
-      )).subscribe(async () => {
-        await new Promise((resolve, reject) => {
-          this.log({ level: 'info', message: 'Launching…' })
-          timer(1000).subscribe(() => resolve())
-        })
-        this.ui = new UI({
-          bindings: {
-            a: () => this.handleKeyPress('a'), // Next advisor
-            c: () => this.handleKeyPress('c'), // Show chart / next chart
-            d: () => this.handleKeyPress('d'), // Show chart data
-            f: () => this.handleKeyPress('f'), // Show funds
-            l: () => this.handleKeyPress('l'), // Show logs
-            q: () => this.handleKeyPress('q'), // Quit
-            t: () => this.handleKeyPress('t'), // Show trades
-            v: () => this.handleKeyPress('v'), // Show trade details
-            x: () => this.handleKeyPress('x'), // Show chart / previous chart
-            y: () => this.handleKeyPress('y'), // Yes
-            z: () => this.handleKeyPress('z') // Cycle charts with open trades
-          },
-          getEstimatedValue: () => Object.keys(this.funds).reduce((estimatedValue, asset) => {
-            if (this.funds[asset].dollarPrice) {
-              return estimatedValue + this.funds[asset].dollarPrice
-            }
-            return estimatedValue
-          }, 0),
-          handleResize: () => {
-            delete this.readMore
-            this.show()
-          },
-          title: `${description} v${version}`
-        })
-        const advisorIdsLoaded = Object.keys(this.advisors)
-        this.log({ level: 'warning', message: `Do ${chalk.inverse('NOT')} use or share this software without explicit authorization from ${chalk.underline('lropero@gmail.com')}` })
-        this.log({ level: advisorIdsLoaded.length ? 'success' : 'warning', message: advisorIdsLoaded.length ? `Advisors running:${advisorIdsLoaded.map((advisorId) => ' ' + this.advisors[advisorId].name)}` : 'No advisors running' })
-        this.log({ level: 'silent', message: '--- FINISHED INITIALIZATION ---' })
-        this.processAdvices()
-        this.show()
-        interval(1000).subscribe(() => {
-          if (['c', 't', 'v', 'z'].includes(this.currentMode)) {
-            this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen) && this.show()
-          }
-        })
+      )).toPromise()
+      await new Promise((resolve, reject) => {
+        this.log({ level: 'info', message: 'Launching…' })
+        timer(1000).subscribe(() => resolve())
       })
-      timer(1000 * 60 * 30).subscribe(() => this.updateTimer())
+      this.ui = new UI({
+        bindings: {
+          a: () => this.handleKeyPress('a'), // Next advisor
+          c: () => this.handleKeyPress('c'), // Next chart
+          d: () => this.handleKeyPress('d'), // Show chart data
+          f: () => this.handleKeyPress('f'), // Show funds
+          k: () => this.handleKeyPress('k'), // Close trades
+          l: () => this.handleKeyPress('l'), // Show logs
+          q: () => this.handleKeyPress('q'), // Quit
+          t: () => this.handleKeyPress('t'), // Show trades
+          v: () => this.handleKeyPress('v'), // Show trade details (from chart with trade)
+          x: () => this.handleKeyPress('x'), // Previous chart
+          y: () => this.handleKeyPress('y'), // Yes (quit screen)
+          z: () => this.handleKeyPress('z') // Cycle charts with open trades
+        },
+        getEstimatedValue: () => Object.keys(this.funds).reduce((estimatedValue, asset) => {
+          if (this.funds[asset].dollarPrice) {
+            return estimatedValue + this.funds[asset].dollarPrice
+          }
+          return estimatedValue
+        }, 0),
+        handleResize: () => {
+          delete this.readMore
+          this.show()
+        },
+        title: `${description} v${version}`
+      })
+      this.show()
+      interval(1000).subscribe(() => {
+        if (['c', 't', 'v', 'z'].includes(this.currentMode)) {
+          this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen) && this.show()
+        }
+      })
+      this.processAdvices()
+      this.log({ level: 'warning', message: `Do ${chalk.inverse('NOT')} use or share this software without explicit authorization from ${chalk.underline('lropero@gmail.com')}` })
+      const advisorIdsLoaded = Object.keys(this.advisors)
+      this.log({ level: advisorIdsLoaded.length ? 'success' : 'warning', message: advisorIdsLoaded.length ? `Advisors running:${advisorIdsLoaded.map((advisorId) => ' ' + this.advisors[advisorId].name)}` : 'No advisors running' })
+      this.log({ level: 'silent', message: '--- FINISHED INITIALIZATION ---' })
     } catch (error) {
       this.log(error)
       process.exit()
@@ -450,15 +396,16 @@ class Bot {
         concatMap((advice) => new Promise(async (resolve, reject) => {
           try {
             await this.digestAdvice(advice)
-            return resolve()
           } catch (error) {
             this.log(error)
-            return resolve()
           }
+          timer(1000).subscribe(() => this.processAdvices())
+          return resolve()
         }))
       ).toPromise()
+    } else {
+      timer(1000).subscribe(() => this.processAdvices())
     }
-    timer(1000).subscribe(() => this.processAdvices())
   }
 
   processNotification (notification) {
@@ -467,6 +414,90 @@ class Bot {
       case 'candlesReady': return this.analyzeChart(payload)
       case 'chartReset': return this.resubscribeTradesToNewStream(payload)
     }
+  }
+
+  processSignal (signal, { advisorId, chartId, strategy }) {
+    return new Promise(async (resolve, reject) => {
+      const advisor = this.advisors[advisorId]
+      const chart = this.charts[chartId]
+      const who = `${advisor.name}->${chart.name}->${strategy.name}`
+      switch (signal) {
+        case 'CLOSE LONG':
+        case 'CLOSE SHORT': {
+          const trade = this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.who === who && trade.isOpen)
+          if (trade && ((signal === 'CLOSE LONG' && trade.isLong) || (signal === 'CLOSE SHORT' && !trade.isLong))) {
+            try {
+              await trade.close('signal')
+              return resolve()
+            } catch (error) {
+              return reject(error)
+            }
+          }
+          break
+        }
+        case 'LONG':
+        case 'SHORT': {
+          const isLong = signal === 'LONG'
+          const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
+          const longsSellingBackAsset = this.trades.filter((trade) => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
+          const shortsSellingBackAsset = this.trades.filter((trade) => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
+          const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
+          const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
+          const amount = funds * advisor.margin
+          const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
+          if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
+            try {
+              const trade = await Trade.initialize({
+                advisorId,
+                buy: (quantity, info) => new Promise(async (resolve, reject) => {
+                  try {
+                    const order = await this.provider.buy(quantity, info)
+                    return resolve(order)
+                  } catch (error) {
+                    return reject(error)
+                  }
+                }),
+                chartId,
+                exchangeInfo: this.exchangeInfo,
+                id: `T${this.trades.length + 1}`,
+                isLong,
+                log: (event) => this.log(event),
+                quantity,
+                sell: (quantity, info) => new Promise((resolve, reject) => {
+                  try {
+                    const order = this.provider.sell(quantity, info)
+                    return resolve(order)
+                  } catch (error) {
+                    return reject(error)
+                  }
+                }),
+                show: () => this.show(),
+                signal,
+                strategy,
+                stream: chart.stream,
+                symbol: chart.config.symbol,
+                updateFunds: () => new Promise(async (resolve, reject) => {
+                  try {
+                    const funds = await this.updateFunds(true)
+                    return resolve(funds)
+                  } catch (error) {
+                    return reject(error)
+                  }
+                }),
+                who
+              })
+              this.trades.push(trade)
+              this.show()
+              return resolve()
+            } catch (error) {
+              return reject(error)
+            }
+          }
+          break
+        }
+        default: return reject(new Error(`Unable to process signal ${signal} from ${strategy.name}`))
+      }
+    })
   }
 
   resubscribeTradesToNewStream ({ chartId, stream }) {
@@ -525,6 +556,7 @@ class Bot {
         case 'd2': return this.ui.renderData(this.charts[this.currentChart], 2)
         case 'd3': return this.ui.renderData(this.charts[this.currentChart], 3)
         case 'f': return this.ui.renderFunds(this.funds)
+        case 'k': return this.ui.renderClose()
         case 'l': return this.ui.renderLogs(this.logs.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
         case 'q': return this.ui.renderQuit()
         case 't': return this.ui.renderTrades(this.trades.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
@@ -576,7 +608,7 @@ class Bot {
       timer(1000 * 60 * 30).subscribe(() => this.updateTimer())
     } catch (error) {
       timer(1000 * 60).subscribe(() => this.updateTimer())
-      error.message = `updateTimer(): ${errorToString(error)}`
+      error.message = `Unable to update server info: ${errorToString(error)}`
       this.log(error)
     }
   }

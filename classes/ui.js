@@ -268,6 +268,11 @@ class UI {
     this.screen.render()
   }
 
+  renderClose () {
+    this.display.setContent(chalk.magenta(figures.play) + ' ' + chalk.white('Really close all trades?') + ' ' + chalk.gray(`Press ${chalk.yellow('Y')} to confirm`))
+    this.screen.render()
+  }
+
   renderData (chart, mode) {
     if ([1, 2, 3].includes(mode)) {
       let data

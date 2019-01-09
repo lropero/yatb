@@ -8,8 +8,9 @@ const config = require('./config')
 class Strategy {
   static analyze (candles, isFinal) {
     return new Promise((resolve, reject) => {
+      const signals = []
       if (candles.length < 2) {
-        return resolve()
+        return resolve(signals)
       }
       const { indicators: { fast30, slow10 } } = candles[0]
       const { indicators: { fast30: prevFast30, slow10: prevSlow10 } } = candles[1]
@@ -17,25 +18,25 @@ class Strategy {
         if (isFinal) { // Last candle is final
           if (candles[0].close > fast30.ema && candles[0].close < slow10.sma) { // Price is in the zone
             if (candles[1].close > prevSlow10.sma) { // Previous price wasn't
-              return resolve('LONG')
+              signals.push('LONG')
             }
           }
         }
       } else if (prevSlow10.sma > prevFast30.ema) { // Market stopped trending up
-        return resolve('CLOSE LONG')
+        signals.push('CLOSE LONG')
       }
       if (slow10.sma < fast30.ema) { // Market is trending down
         if (isFinal) { // Last candle is final
           if (candles[0].close < fast30.ema && candles[0].close > slow10.sma) { // Price is in the zone
             if (candles[1].close < prevSlow10.sma) { // Previous price wasn't
-              return resolve('SHORT')
+              signals.push('SHORT')
             }
           }
         }
       } else if (prevSlow10.sma < prevFast30.ema) { // Market stopped trending down
-        return resolve('CLOSE SHORT')
+        signals.push('CLOSE SHORT')
       }
-      return resolve()
+      return resolve(signals)
     })
   }
 

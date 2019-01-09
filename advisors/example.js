@@ -14,6 +14,17 @@ module.exports = {
     },
     {
       symbol: 'BTCUSDT',
+      timeframe: '3m',
+      strategies: {
+        'vsa': {
+          profitTarget: '2%',
+          stopLoss: '1%',
+          timeToLive: '1h'
+        }
+      }
+    },
+    {
+      symbol: 'BTCUSDT',
       timeframe: '5m',
       strategies: {
         'vsa': {

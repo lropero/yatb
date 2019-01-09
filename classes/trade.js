@@ -49,7 +49,6 @@ class Trade {
       })
       this.timeToLive = timeToLive
     }
-    this.updateFunds()
   }
 
   static initialize ({ advisorId, buy, chartId, exchangeInfo, id, isLong, log, quantity, sell, show, signal, strategy, stream, symbol, updateFunds, who }) {
@@ -65,6 +64,7 @@ class Trade {
         const order = isLong ? await buy(quantity, info) : await sell(quantity, info)
         if (order.orderId && order.fills.length) {
           const trade = new Trade(advisorId, buy, chartId, id, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who)
+          await updateFunds()
           return resolve(trade)
         }
         throw new Error('Order failed')
@@ -127,20 +127,7 @@ class Trade {
         const order = this.isLong ? await this.sell(this.quantity, this.info) : await this.buy(this.quantity, this.info)
         if (order.orderId && order.fills.length) {
           this.isOpen = false
-          switch (type) {
-            case 'expire': {
-              this.isExpired = true
-              break
-            }
-            case 'stop': {
-              this.isWinner = false
-              break
-            }
-            case 'target': {
-              this.isWinner = true
-              break
-            }
-          }
+          this.closeType = type
           this.orders.push({
             date: new Date(),
             ...order
@@ -156,14 +143,9 @@ class Trade {
         }
         throw new Error('Order failed')
       } catch (error) {
-        timer(1000 * 60).subscribe(async () => {
-          try {
-            await this.close(type)
-          } catch (error) {
-            this.log(error)
-          }
-        })
-        error.message = `${chalk.underline(this.id)}: ${errorToString(error)}`
+        this.isOpen = false
+        this.show()
+        error.message = `Unable to close ${chalk.underline(this.id)}: ${errorToString(error)}`
         return reject(error)
       }
     })
@@ -173,7 +155,7 @@ class Trade {
     if (this.isOpen) {
       this.setStop(stream)
       this.setTarget(stream)
-      if (this.timeToLive > 0) {
+      if (this.timer && this.timeToLive > 0) {
         this.timer.unsubscribe()
         const timeRemaining = new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date()
         this.timer = timer(timeRemaining).subscribe(async () => {
@@ -241,10 +223,15 @@ class Trade {
     const getIcon = () => {
       if (this.isOpen) {
         return this.isLong ? chalk.cyan(figures.arrowUp) : chalk.magenta(figures.arrowDown)
-      } else if (typeof this.isWinner !== 'undefined') {
-        return this.isWinner ? chalk.green(figures.play) : chalk.red(figures.play)
+      } else {
+        switch (this.closeType) {
+          case 'expire': return chalk.blue(figures.play)
+          case 'signal': return chalk.yellow(figures.play)
+          case 'stop': return chalk.red(figures.play)
+          case 'target': return chalk.green(figures.play)
+          default: return chalk.gray(figures.play)
+        }
       }
-      return chalk[this.isExpired ? 'blue' : 'yellow'](figures.play)
     }
     const timeRemaining = this.timeToLive ? new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date() : 0
     return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : (this.isOpen && timeRemaining > 0 ? ' ' + chalk.blue(millisecondsToTime(timeRemaining)) : '')}`

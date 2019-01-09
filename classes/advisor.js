@@ -1,6 +1,8 @@
 const fs = require('fs')
 const tulind = require('tulind')
 
+const { errorToString } = require('../helpers')
+
 class Advisor {
   constructor (name, chartIds, margin) {
     this.name = name
@@ -82,17 +84,18 @@ class Advisor {
 
   analyze (candles, strategies, isFinal) {
     return Object.keys(strategies).map((strategyId) => new Promise(async (resolve, reject) => {
+      const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
       try {
-        const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
         if (!fs.existsSync(`./strategies/${strategyId}/index.js`)) {
           return reject(new Error(`Strategy ${strategyName} doesn't exist`))
         }
         delete require.cache[require.resolve(`../strategies/${strategyId}`)]
         const Strategy = require(`../strategies/${strategyId}`)
-        const signal = await Strategy.analyze(candles, isFinal)
-        if (typeof signal === 'string' && signal.length) {
+        const signals = await Strategy.analyze(candles, isFinal)
+        if (signals.length) {
+          signals.sort()
           return resolve({
-            signal,
+            signals,
             strategy: {
               config: strategies[strategyId],
               name: strategyName
@@ -101,6 +104,7 @@ class Advisor {
         }
         return resolve()
       } catch (error) {
+        error.message = `Strategy ${strategyName}: ${errorToString(error)}`
         return reject(error)
       }
     }))

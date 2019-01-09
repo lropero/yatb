@@ -7,18 +7,20 @@ const config = require('./config')
 class Strategy {
   static analyze (candles, isFinal) {
     return new Promise((resolve, reject) => {
+      const signals = []
       if (candles.length < 2 || !isFinal) {
-        return resolve()
+        return resolve(signals)
       }
       const { indicators: { bands } } = candles[0]
       const { indicators: { bands: prevBands } } = candles[1]
       if (candles[0].close < bands.bbands_lower && candles[1].close > prevBands.bbands_lower) {
-        return resolve('LONG')
+        signals.push('CLOSE SHORT')
+        signals.push('LONG')
+      } else if (candles[0].close > bands.bbands_upper && candles[1].close < prevBands.bbands_upper) {
+        signals.push('CLOSE LONG')
+        signals.push('SHORT')
       }
-      if (candles[0].close > bands.bbands_upper && candles[1].close < prevBands.bbands_upper) {
-        return resolve('SHORT')
-      }
-      return resolve()
+      return resolve(signals)
     })
   }
 
