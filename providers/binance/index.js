@@ -25,7 +25,7 @@ class Provider {
   }
 
   buy (quantity, info) {
-    return this.limiter.schedule(() => new Promise(async (resolve, reject) => {
+    return this.limiter.schedule(() => new Promise((resolve, reject) => {
       try {
         if (!(quantity > 0)) {
           return reject(new Error('Can\'t buy zero'))
@@ -183,7 +183,7 @@ class Provider {
                   isFinal: candle.x
                 })
               })
-              return this.api.websockets.terminate(endpoint)
+              return () => this.api.websockets.terminate(endpoint)
             })),
             catchError(error => throwError(error)),
             share()
@@ -197,7 +197,7 @@ class Provider {
   }
 
   sell (quantity, info) {
-    return this.limiter.schedule(() => new Promise(async (resolve, reject) => {
+    return this.limiter.schedule(() => new Promise((resolve, reject) => {
       try {
         if (!(quantity > 0)) {
           return reject(new Error('Can\'t sell zero'))
@@ -210,6 +210,16 @@ class Provider {
           }
           return resolve(response)
         })
+      } catch (error) {
+        return reject(error)
+      }
+    }))
+  }
+
+  updateServerTime () {
+    return this.limiter.schedule(() => new Promise((resolve, reject) => {
+      try {
+        this.api.useServerTime(() => resolve())
       } catch (error) {
         return reject(error)
       }

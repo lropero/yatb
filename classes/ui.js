@@ -2,7 +2,9 @@ const asciichart = require('asciichart')
 const babar = require('babar')
 const blessed = require('blessed')
 const chalk = require('chalk')
+const chalkAnimation = require('chalk-animation')
 const figures = require('figures')
+const sfx = require('sfx')
 const stripAnsi = require('strip-ansi')
 const { debounce } = require('rxjs/operators')
 const { format } = require('date-fns')
@@ -55,6 +57,7 @@ class UI {
     this.appendDisplay()
     this.appendFooter(config.getEstimatedValue)
     fromEvent(this.screen, 'resize').pipe(debounce(() => timer(10))).subscribe(() => {
+      if (this.egg) this.egg.unsubscribe()
       this.drawLogger()
       config.handleResize()
     })
@@ -140,6 +143,7 @@ class UI {
   }
 
   renderChart (advisor, chart, trade) {
+    if (this.egg) this.egg.unsubscribe()
     const { close: quote, direction = '' } = chart.candles[chart.candles.length - 1]
     const { tickSize } = chart.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
     const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
@@ -269,60 +273,74 @@ class UI {
   }
 
   renderClose () {
+    if (this.egg) this.egg.unsubscribe()
     this.display.setContent(chalk.magenta(figures.play) + ' ' + chalk.white('Really close all trades?') + ' ' + chalk.gray(`Press ${chalk.yellow('Y')} to confirm`))
     this.screen.render()
   }
 
   renderData (chart, mode) {
-    if ([1, 2, 3].includes(mode)) {
-      let data
-      switch (mode) {
-        case 1: {
-          const candles = chart.candles.slice().reverse()
-          data = candles.reduce((data, candle) => {
-            const date = `${format(candle.time, 'DD-MMM h:mma')}${!candle.isFinal ? ' LIVE' : ''}`
-            data.push(Object.keys(candle.indicators).length ? {
-              time: date,
-              close: candle.close,
-              indicators: candle.indicators
-            } : {
-              time: date,
-              close: candle.close
-            })
-            return data
-          }, [])
-          break
-        }
-        case 2: {
-          const candles = chart.candles.slice().reverse()
-          data = candles.reduce((data, candle) => {
-            const { time, isFinal, indicators, ...rest } = candle
-            const date = `${format(candle.time, 'DD-MMM h:mma')}${!isFinal ? ' LIVE' : ''}`
-            data.push(Object.keys(indicators).length ? {
-              time: date,
-              ...rest,
-              indicators
-            } : {
-              time: date,
-              ...rest
-            })
-            return data
-          }, [])
-          break
-        }
-        case 3: {
-          const { orderTypes, ...rest } = chart.info
-          data = chart.config.strategies ? Object.assign({}, { strategies: chart.config.strategies }, rest) : rest
-          break
-        }
+    if (this.egg) this.egg.unsubscribe()
+    switch (mode) {
+      case 1: {
+        const candles = chart.candles.slice().reverse()
+        const data = candles.reduce((data, candle) => {
+          const date = `${format(candle.time, 'DD-MMM h:mma')}${!candle.isFinal ? ' LIVE' : ''}`
+          data.push(Object.keys(candle.indicators).length ? {
+            time: date,
+            close: candle.close,
+            indicators: candle.indicators
+          } : {
+            time: date,
+            close: candle.close
+          })
+          return data
+        }, [])
+        this.display.setContent(pretty(data, 2))
+        break
       }
-      this.display.setContent(pretty(data, 2))
+      case 2: {
+        const candles = chart.candles.slice().reverse()
+        const data = candles.reduce((data, candle) => {
+          const { time, isFinal, indicators, ...rest } = candle
+          const date = `${format(candle.time, 'DD-MMM h:mma')}${!isFinal ? ' LIVE' : ''}`
+          data.push(Object.keys(indicators).length ? {
+            time: date,
+            ...rest,
+            indicators
+          } : {
+            time: date,
+            ...rest
+          })
+          return data
+        }, [])
+        this.display.setContent(pretty(data, 2))
+        break
+      }
+      case 3: {
+        const { orderTypes, ...rest } = chart.info
+        const data = chart.config.strategies ? Object.assign({}, { strategies: chart.config.strategies }, rest) : rest
+        this.display.setContent(pretty(data, 2))
+        break
+      }
+    }
+    this.screen.render()
+  }
+
+  renderEgg () {
+    const fxs = ['glitch', 'karaoke', 'neon', 'pulse', 'radar', 'rainbow']
+    const animation = chalkAnimation[fxs[Math.floor(Math.random() * 6)]]('Potatoes and black holes').stop()
+    this.egg = timer(0, Math.floor(Math.random() * 49) + 2).subscribe(() => {
+      this.display.setContent(animation.frame().slice(11))
       this.screen.render()
+    })
+    if (Math.floor(Math.random() * 10) === 0) {
+      sfx.say('Pim pum pim pum pim pum dum dee dum')
     }
   }
 
   renderFunds (funds) {
     if (funds) {
+      if (this.egg) this.egg.unsubscribe()
       const estimatedValue = Object.keys(funds).reduce((estimatedValue, asset) => {
         if (funds[asset].dollarPrice) {
           return estimatedValue + funds[asset].dollarPrice
@@ -336,18 +354,21 @@ class UI {
 
   renderLogs (logs) {
     if (logs.length) {
+      if (this.egg) this.egg.unsubscribe()
       this.display.setContent(logs.map((log) => log.toString(true)).join('\n'))
       this.screen.render()
     }
   }
 
   renderQuit () {
+    if (this.egg) this.egg.unsubscribe()
     this.display.setContent(chalk.magenta(figures.play) + ' ' + chalk.white('Really quit?') + ' ' + chalk.gray(`Press ${chalk.yellow('Y')} to confirm`))
     this.screen.render()
   }
 
   renderTrade (trade) {
     if (trade) {
+      if (this.egg) this.egg.unsubscribe()
       const { advisorId, buy, chartId, info, log, sell, show, updateFunds, stop, target, timer, ...rest } = trade
       const timeRemaining = trade.timeToLive ? new Date(trade.orders[0].date.getTime() + trade.timeToLive) - new Date() : 0
       this.display.setContent(chalk[trade.isOpen ? 'yellow' : 'gray'](pretty(timeRemaining > 0 ? {
@@ -360,6 +381,7 @@ class UI {
 
   renderTrades (trades) {
     if (trades.length) {
+      if (this.egg) this.egg.unsubscribe()
       this.display.setContent(trades.map((trade) => trade.toString()).join('\n'))
       this.screen.render()
     }

@@ -199,7 +199,10 @@ class Bot {
         break
       }
       case 'k': {
-        if (this.trades.length) {
+        if (this.currentMode === 'q') {
+          this.currentMode = 'ee'
+          this.show()
+        } else if (this.trades.length) {
           this.currentMode = 'k'
           this.show()
         }
@@ -555,6 +558,7 @@ class Bot {
         case 'd1': return this.ui.renderData(this.charts[this.currentChart], 1)
         case 'd2': return this.ui.renderData(this.charts[this.currentChart], 2)
         case 'd3': return this.ui.renderData(this.charts[this.currentChart], 3)
+        case 'ee': return this.ui.renderEgg()
         case 'f': return this.ui.renderFunds(this.funds)
         case 'k': return this.ui.renderClose()
         case 'l': return this.ui.renderLogs(this.logs.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
@@ -596,6 +600,7 @@ class Bot {
 
   async updateTimer () {
     try {
+      await this.provider.updateServerTime()
       this.exchangeInfo = await this.retrieveExchangeInfo()
       Object.keys(this.charts).map((chartId) => {
         this.charts[chartId].updateInfo(this.exchangeInfo)

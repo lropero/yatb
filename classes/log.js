@@ -22,11 +22,11 @@ class Log {
         break
       }
       case 'closeStop': {
-        Math.floor(Math.random() * 100) > 0 ? sfx.play('basso') : sfx.say('Poponga la monga sorongo y pepeganga')
+        sfx.play('basso')
         break
       }
       case 'closeTarget': {
-        Math.floor(Math.random() * 100) > 0 ? sfx.play('tink') : sfx.say('Pim pum pim pum pim pum dum dee dum')
+        sfx.play('tink')
         break
       }
       case 'error': {
