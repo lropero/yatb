@@ -95,7 +95,7 @@ class Advisor {
         if (signals.length) {
           signals.sort()
           return resolve({
-            signals,
+            signals: signals.filter((value, index, self) => self.indexOf(value) === index),
             strategy: {
               config: strategies[strategyId],
               name: strategyName

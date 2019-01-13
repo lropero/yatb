@@ -1,6 +1,6 @@
 {
   "name": "cryptobot",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "CryptoBot",
   "main": "index.js",
   "author": "Luciano Ropero <lropero@gmail.com>",
@@ -12,7 +12,7 @@
     "babar": "^0.2.0",
     "beepbeep": "^1.2.2",
     "blessed": "^0.1.81",
-    "bottleneck": "^2.15.0",
+    "bottleneck": "^2.15.2",
     "chalk": "^2.4.2",
     "chalk-animation": "^1.6.0",
     "date-fns": "^1.30.1",

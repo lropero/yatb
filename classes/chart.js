@@ -30,7 +30,7 @@ class Chart {
         log({ level: 'info', message: `Added chart ${chart.name}` })
         return resolve(chart)
       } catch (error) {
-        log(error)
+        log({ level: 'silent', message: `${errorToString(error)}` })
         return resolve(chart)
       }
     })
@@ -80,18 +80,17 @@ class Chart {
           }
           this.candles = await withIndicators(candles, this.config.indicators || {})
           if (this.config.strategies) {
-            this.notifications.next({ type: 'candlesReady', payload: { chartId: this.id, candles: this.candles.slice().reverse(), isFinal: candle.isFinal } })
+            this.notifications.next({ type: 'ANALYZE_CHART', payload: { chartId: this.id, candles: this.candles.slice().reverse(), isFinal: candle.isFinal } })
           }
         }
         this.show(this.id)
       },
       error: (error) => {
-        error.message = `${errorToString(error)}, restarting ${this.name}`
-        this.log(error)
+        this.log({ level: 'silent', message: `${errorToString(error)}, restarting ${this.name}` })
         this.restart()
       }
     })
-    this.notifications.next({ type: 'chartReset', payload: { chartId: this.id, stream } })
+    this.notifications.next({ type: 'RESUBSCRIBE_TRADES_TO_NEW_STREAM', payload: { chartId: this.id, stream } })
     this.watchdog = interval(1000 * 60).subscribe(() => {
       isOnline().then(() => {
         try {
@@ -131,7 +130,7 @@ class Chart {
       this.disable()
       await this.start()
     } catch (error) {
-      this.log(error)
+      this.log({ level: 'silent', message: `${errorToString(error)}` })
     }
   }
 

@@ -18,10 +18,7 @@ class Provider {
       reconnect: false,
       useServerTime: true
     })
-    this.limiter = new Bottleneck({
-      maxConcurrent: 1,
-      minTime: 300
-    })
+    this.limiter = new Bottleneck({ maxConcurrent: 1, minTime: 300 })
   }
 
   buy (quantity, info) {

@@ -1,3 +1,4 @@
+const Bottleneck = require('bottleneck')
 const chalk = require('chalk')
 const fs = require('fs')
 const hash = require('object-hash')
@@ -14,9 +15,9 @@ const { description, version } = require('../package.json')
 
 class Bot {
   constructor (config) {
-    this.advices = []
     this.advisors = {}
     this.charts = {}
+    this.limiter = new Bottleneck({ maxConcurrent: 1, minTime: 300 })
     this.logs = []
     this.notifications = new Subject()
     this.trades = []
@@ -98,7 +99,7 @@ class Bot {
         try {
           const advices = (await Promise.all(advisor.analyze(candles, chart.config.strategies, isFinal))).filter((advice) => advice)
           if (advices.length) {
-            this.advices.push(...(advices.map((advice) => ({ advisorId, chartId, ...advice }))))
+            advices.map((advice) => this.notifications.next({ type: 'DIGEST_ADVICE', payload: { advisorId, chartId, ...advice } }))
           }
         } catch (error) {
           this.log(error)
@@ -119,25 +120,86 @@ class Bot {
     })
   }
 
-  digestAdvice (advice) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const { signals, ...rest } = advice
-        await forkJoin(from(signals).pipe(
-          concatMap((signal) => new Promise(async (resolve, reject) => {
+  digestAdvice ({ advisorId, chartId, signals, strategy }) {
+    const advisor = this.advisors[advisorId]
+    const chart = this.charts[chartId]
+    const who = `${advisor.name}->${chart.name}->${strategy.name}`
+    signals.map((signal) => this.limiter.schedule(() => new Promise(async (resolve, reject) => {
+      switch (signal) {
+        case 'CLOSE LONG':
+        case 'CLOSE SHORT': {
+          const trade = this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.who === who && trade.isOpen)
+          if (trade && ((signal === 'CLOSE LONG' && trade.isLong) || (signal === 'CLOSE SHORT' && !trade.isLong))) {
             try {
-              await this.processSignal(signal, rest)
-              return resolve()
+              await trade.close('signal')
             } catch (error) {
               return reject(error)
             }
-          }))
-        )).toPromise()
-        return resolve()
-      } catch (error) {
-        return reject(error)
+          }
+          return resolve()
+        }
+        case 'LONG':
+        case 'SHORT': {
+          const isLong = signal === 'LONG'
+          const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
+          const longsSellingBackAsset = this.trades.filter((trade) => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
+          const shortsSellingBackAsset = this.trades.filter((trade) => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
+          const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
+          const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
+          const amount = funds * advisor.margin
+          const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
+          if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
+            try {
+              const trade = await Trade.initialize({
+                advisorId,
+                buy: (quantity, info) => new Promise(async (resolve, reject) => {
+                  try {
+                    const order = await this.provider.buy(quantity, info)
+                    return resolve(order)
+                  } catch (error) {
+                    return reject(error)
+                  }
+                }),
+                chartId,
+                exchangeInfo: this.exchangeInfo,
+                id: `T${this.trades.length + 1}`,
+                isLong,
+                log: (event) => this.log(event),
+                quantity,
+                sell: (quantity, info) => new Promise((resolve, reject) => {
+                  try {
+                    const order = this.provider.sell(quantity, info)
+                    return resolve(order)
+                  } catch (error) {
+                    return reject(error)
+                  }
+                }),
+                show: () => this.show(),
+                signal,
+                strategy,
+                stream: chart.stream,
+                symbol: chart.config.symbol,
+                updateFunds: () => new Promise(async (resolve, reject) => {
+                  try {
+                    const funds = await this.updateFunds(true)
+                    return resolve(funds)
+                  } catch (error) {
+                    return reject(error)
+                  }
+                }),
+                who
+              })
+              this.trades.push(trade)
+              this.show()
+            } catch (error) {
+              return reject(error)
+            }
+          }
+          return resolve()
+        }
+        default: return reject(new Error(`Unable to process signal ${signal} from ${strategy.name}`))
       }
-    })
+    })))
   }
 
   async handleKeyPress (key) {
@@ -317,11 +379,10 @@ class Bot {
               throw new Error(`Advisor #${index + 1} not properly configured`)
             }
             await this.addAdvisor(advisorId)
-            return resolve()
           } catch (error) {
             this.log(error)
-            return resolve()
           }
+          return resolve()
         }))
       )).toPromise()
       await new Promise((resolve, reject) => {
@@ -361,7 +422,6 @@ class Bot {
           this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen) && this.show()
         }
       })
-      this.processAdvices()
       this.log({ level: 'warning', message: `Do ${chalk.inverse('NOT')} use or share this software without explicit authorization from ${chalk.underline('lropero@gmail.com')}` })
       const advisorIdsLoaded = Object.keys(this.advisors)
       this.log({ level: advisorIdsLoaded.length ? 'success' : 'warning', message: advisorIdsLoaded.length ? `Advisors running:${advisorIdsLoaded.map((advisorId) => ' ' + this.advisors[advisorId].name)}` : 'No advisors running' })
@@ -391,116 +451,13 @@ class Bot {
     }
   }
 
-  async processAdvices () {
-    if (this.advices.length) {
-      const advices = this.advices.slice()
-      this.advices = []
-      await from(advices).pipe(
-        concatMap((advice) => new Promise(async (resolve, reject) => {
-          try {
-            await this.digestAdvice(advice)
-          } catch (error) {
-            this.log(error)
-          }
-          timer(1000).subscribe(() => this.processAdvices())
-          return resolve()
-        }))
-      ).toPromise()
-    } else {
-      timer(1000).subscribe(() => this.processAdvices())
-    }
-  }
-
   processNotification (notification) {
     const { payload, type } = notification
     switch (type) {
-      case 'candlesReady': return this.analyzeChart(payload)
-      case 'chartReset': return this.resubscribeTradesToNewStream(payload)
+      case 'ANALYZE_CHART': return this.analyzeChart(payload)
+      case 'DIGEST_ADVICE': return this.digestAdvice(payload)
+      case 'RESUBSCRIBE_TRADES_TO_NEW_STREAM': return this.resubscribeTradesToNewStream(payload)
     }
-  }
-
-  processSignal (signal, { advisorId, chartId, strategy }) {
-    return new Promise(async (resolve, reject) => {
-      const advisor = this.advisors[advisorId]
-      const chart = this.charts[chartId]
-      const who = `${advisor.name}->${chart.name}->${strategy.name}`
-      switch (signal) {
-        case 'CLOSE LONG':
-        case 'CLOSE SHORT': {
-          const trade = this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.who === who && trade.isOpen)
-          if (trade && ((signal === 'CLOSE LONG' && trade.isLong) || (signal === 'CLOSE SHORT' && !trade.isLong))) {
-            try {
-              await trade.close('signal')
-              return resolve()
-            } catch (error) {
-              return reject(error)
-            }
-          }
-          break
-        }
-        case 'LONG':
-        case 'SHORT': {
-          const isLong = signal === 'LONG'
-          const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
-          const longsSellingBackAsset = this.trades.filter((trade) => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
-          const shortsSellingBackAsset = this.trades.filter((trade) => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
-          const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
-          const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
-          const amount = funds * advisor.margin
-          const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
-          if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
-            try {
-              const trade = await Trade.initialize({
-                advisorId,
-                buy: (quantity, info) => new Promise(async (resolve, reject) => {
-                  try {
-                    const order = await this.provider.buy(quantity, info)
-                    return resolve(order)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                chartId,
-                exchangeInfo: this.exchangeInfo,
-                id: `T${this.trades.length + 1}`,
-                isLong,
-                log: (event) => this.log(event),
-                quantity,
-                sell: (quantity, info) => new Promise((resolve, reject) => {
-                  try {
-                    const order = this.provider.sell(quantity, info)
-                    return resolve(order)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                show: () => this.show(),
-                signal,
-                strategy,
-                stream: chart.stream,
-                symbol: chart.config.symbol,
-                updateFunds: () => new Promise(async (resolve, reject) => {
-                  try {
-                    const funds = await this.updateFunds(true)
-                    return resolve(funds)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                who
-              })
-              this.trades.push(trade)
-              this.show()
-              return resolve()
-            } catch (error) {
-              return reject(error)
-            }
-          }
-          break
-        }
-        default: return reject(new Error(`Unable to process signal ${signal} from ${strategy.name}`))
-      }
-    })
   }
 
   resubscribeTradesToNewStream ({ chartId, stream }) {
