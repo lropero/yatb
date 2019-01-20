@@ -20,6 +20,7 @@ class Bot {
     this.limiter = new Bottleneck({ maxConcurrent: 1, minTime: 300 })
     this.logs = []
     this.notifications = new Subject()
+    this.tradeCounter = 0
     this.trades = []
     this.initialize(config)
   }
@@ -162,7 +163,7 @@ class Bot {
                 }),
                 chartId,
                 exchangeInfo: this.exchangeInfo,
-                id: `T${this.trades.length + 1}`,
+                id: `T${this.tradeCounter + 1}`,
                 isLong,
                 log: (event) => this.log(event),
                 quantity,
@@ -189,7 +190,11 @@ class Bot {
                 }),
                 who
               })
+              this.tradeCounter++
               this.trades.push(trade)
+              while (this.trades.length > 50) {
+                this.trades.shift()
+              }
               this.show()
             } catch (error) {
               return reject(error)
@@ -405,8 +410,8 @@ class Bot {
           z: () => this.handleKeyPress('z') // Cycle charts with open trades
         },
         getEstimatedValue: () => Object.keys(this.funds).reduce((estimatedValue, asset) => {
-          if (this.funds[asset].dollarPrice) {
-            return estimatedValue + this.funds[asset].dollarPrice
+          if (this.funds[asset].dollars) {
+            return estimatedValue + this.funds[asset].dollars
           }
           return estimatedValue
         }, 0),
@@ -440,7 +445,7 @@ class Bot {
       console.log(log.toString(true))
     }
     this.logs.push(log)
-    while (this.logs.length > 2000) {
+    while (this.logs.length > 1000) {
       this.logs.shift()
     }
     if (this.currentMode === 'l') {
@@ -453,10 +458,15 @@ class Bot {
 
   processNotification (notification) {
     const { payload, type } = notification
-    switch (type) {
-      case 'ANALYZE_CHART': return this.analyzeChart(payload)
-      case 'DIGEST_ADVICE': return this.digestAdvice(payload)
-      case 'RESUBSCRIBE_TRADES_TO_NEW_STREAM': return this.resubscribeTradesToNewStream(payload)
+    try {
+      switch (type) {
+        case 'ANALYZE_CHART': return this.analyzeChart(payload)
+        case 'DIGEST_ADVICE': return this.digestAdvice(payload)
+        case 'RESUBSCRIBE_TRADES_TO_NEW_STREAM': return this.resubscribeTradesToNewStream(payload)
+      }
+    } catch (error) {
+      error.message = `Unable to process notification ${type}: ${errorToString(error)}`
+      this.log(error)
     }
   }
 

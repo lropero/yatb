@@ -87,9 +87,9 @@ class Trade {
         } else if (order.side === 'SELL') {
           profit += order.fills.reduce((profit, fill) => profit + parseFloat(fill.qty) * parseFloat(fill.price), 0)
         }
-        commission += order.fills.reduce((commission, fill) => commission + parseFloat(fill.commission) * funds[fill.commissionAsset].dollarPrice, 0)
+        commission += order.fills.reduce((commission, fill) => commission + parseFloat(fill.commission) * (fill.commissionAsset !== 'USDT' ? funds[fill.commissionAsset].dollars / funds[fill.commissionAsset].available : 1), 0)
       })
-      const gross = (profit - loss) * (this.info.quoteAsset !== 'USDT' ? funds[this.info.quoteAsset].dollarPrice : 1)
+      const gross = (profit - loss) * (this.info.quoteAsset !== 'USDT' ? funds[this.info.quoteAsset].dollars / funds[this.info.quoteAsset].available : 1)
       this.stats = {
         commission,
         duration: this.orders[this.orders.length - 1].date - this.orders[0].date,

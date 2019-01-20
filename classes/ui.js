@@ -37,7 +37,7 @@ const colors = {
   FOOTER_OPTION_KEY: 'cyan',
   FUNDS_ASSET: 'yellow',
   FUNDS_AVAILABLE: 'gray',
-  FUNDS_DOLLAR: 'green',
+  FUNDS_DOLLARS: 'green',
   FUNDS_ORDER: 'magenta',
   FUNDS_TITLE: 'white',
   LOGGER_BACKGROUND: 'gray',
@@ -342,12 +342,12 @@ class UI {
     if (funds) {
       if (this.egg) this.egg.unsubscribe()
       const estimatedValue = Object.keys(funds).reduce((estimatedValue, asset) => {
-        if (funds[asset].dollarPrice) {
-          return estimatedValue + funds[asset].dollarPrice
+        if (funds[asset].dollars) {
+          return estimatedValue + funds[asset].dollars
         }
         return estimatedValue
       }, 0)
-      this.display.setContent(`${chalk[colors.FUNDS_TITLE](`Estimated value: ${formatMoney(estimatedValue, { precision: 3 })}`)}\n` + Object.keys(funds).sort().map((asset) => `${chalk[colors.FUNDS_ASSET](asset)} ${chalk[colors.FUNDS_AVAILABLE](funds[asset].available)}${funds[asset].onOrder > 0 ? ' ' + chalk[colors.FUNDS_ORDER](funds[asset].onOrder) : ''}${funds[asset].dollarPrice > 0 ? ' ' + chalk[colors.FUNDS_DOLLAR](formatMoney(funds[asset].dollarPrice, { precision: 3 })) : ''}`).join('\n'))
+      this.display.setContent(`${chalk[colors.FUNDS_TITLE](`Estimated value: ${formatMoney(estimatedValue, { precision: 3 })}`)}\n` + Object.keys(funds).sort().map((asset) => `${chalk[colors.FUNDS_ASSET](asset)} ${chalk[colors.FUNDS_AVAILABLE](funds[asset].available)}${funds[asset].onOrder > 0 ? ' ' + chalk[colors.FUNDS_ORDER](funds[asset].onOrder) : ''}${funds[asset].dollars > 0 ? ' ' + chalk[colors.FUNDS_DOLLARS](formatMoney(funds[asset].dollars, { precision: 3 })) : ''}`).join('\n'))
       this.screen.render()
     }
   }

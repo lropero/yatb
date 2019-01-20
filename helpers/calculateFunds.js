@@ -1,5 +1,5 @@
 function calculateFunds (balances, prices) {
-  const fundsWithoutDollarPrice = Object.keys(balances)
+  const fundsWithoutDollars = Object.keys(balances)
     .filter((asset) => parseFloat(balances[asset].available) > 0 || parseFloat(balances[asset].onOrder) > 0)
     .sort()
     .reduce((funds, asset) => {
@@ -9,21 +9,21 @@ function calculateFunds (balances, prices) {
       }
       return funds
     }, {})
-  return Object.keys(fundsWithoutDollarPrice).reduce((funds, asset) => {
+  return Object.keys(fundsWithoutDollars).reduce((funds, asset) => {
     if (asset === 'BTC') {
       funds[asset] = {
-        ...fundsWithoutDollarPrice[asset],
-        dollarPrice: parseFloat(fundsWithoutDollarPrice[asset].available * parseFloat(prices.BTCUSDT || 0))
+        ...fundsWithoutDollars[asset],
+        dollars: parseFloat(fundsWithoutDollars[asset].available * parseFloat(prices.BTCUSDT || 0))
       }
     } else if (asset === 'USDT') {
       funds[asset] = {
-        ...fundsWithoutDollarPrice[asset],
-        dollarPrice: parseFloat(fundsWithoutDollarPrice[asset].available)
+        ...fundsWithoutDollars[asset],
+        dollars: parseFloat(fundsWithoutDollars[asset].available)
       }
     } else if (prices[`${asset}BTC`]) {
       funds[asset] = {
-        ...fundsWithoutDollarPrice[asset],
-        dollarPrice: parseFloat(fundsWithoutDollarPrice[asset].available * parseFloat(prices[`${asset}BTC`]) * parseFloat(prices.BTCUSDT || 0))
+        ...fundsWithoutDollars[asset],
+        dollars: parseFloat(fundsWithoutDollars[asset].available * parseFloat(prices[`${asset}BTC`]) * parseFloat(prices.BTCUSDT || 0))
       }
     }
     return funds
