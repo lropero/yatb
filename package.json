@@ -1,6 +1,6 @@
 {
   "name": "cryptobot",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "CryptoBot",
   "main": "index.js",
   "author": "Luciano Ropero <lropero@gmail.com>",
@@ -33,10 +33,12 @@
     "standard": "^12.0.1"
   },
   "scripts": {
-    "clean": "rimraf ./yarn.lock && rimraf ./yarn-*.log && rimraf ./node_modules && yarn cache clean",
-    "nuke": "yarn run clean && yarn",
+    "clean": "rimraf ./yarn.lock && rimraf ./yarn-*.log && yarn cache clean",
+    "init": "rimraf ./node_modules && yarn",
+    "lint": "standard",
+    "nuke": "yarn run clean && yarn run init",
     "start": "node index.js",
-    "test": "standard",
+    "test": "yarn run lint",
     "upgrade": "node upgrade.js"
   }
 }

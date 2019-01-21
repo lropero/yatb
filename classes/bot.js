@@ -125,7 +125,7 @@ class Bot {
     const advisor = this.advisors[advisorId]
     const chart = this.charts[chartId]
     const who = `${advisor.name}->${chart.name}->${strategy.name}`
-    signals.map((signal) => this.limiter.schedule(() => new Promise(async (resolve, reject) => {
+    return signals.map((signal) => this.limiter.schedule(() => new Promise(async (resolve, reject) => {
       switch (signal) {
         case 'CLOSE LONG':
         case 'CLOSE SHORT': {
@@ -456,16 +456,18 @@ class Bot {
     }
   }
 
-  processNotification (notification) {
+  async processNotification (notification) {
     const { payload, type } = notification
     try {
       switch (type) {
         case 'ANALYZE_CHART': return this.analyzeChart(payload)
-        case 'DIGEST_ADVICE': return this.digestAdvice(payload)
+        case 'DIGEST_ADVICE': {
+          await Promise.all(this.digestAdvice(payload))
+          break
+        }
         case 'RESUBSCRIBE_TRADES_TO_NEW_STREAM': return this.resubscribeTradesToNewStream(payload)
       }
     } catch (error) {
-      error.message = `Unable to process notification ${type}: ${errorToString(error)}`
       this.log(error)
     }
   }
