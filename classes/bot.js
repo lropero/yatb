@@ -328,7 +328,7 @@ class Bot {
             try {
               this.currentMode = 't'
               this.show()
-              this.closeTrades()
+              await this.closeTrades()
             } catch (error) {
               this.log(error)
             }
@@ -424,7 +424,7 @@ class Bot {
       this.show()
       interval(1000).subscribe(() => {
         if (['c', 't', 'v', 'z'].includes(this.currentMode)) {
-          this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen) && this.show()
+          this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.isOpen) && this.show()
         }
       })
       this.log({ level: 'warning', message: `Do ${chalk.inverse('NOT')} use or share this software without explicit authorization from ${chalk.underline('lropero@gmail.com')}` })

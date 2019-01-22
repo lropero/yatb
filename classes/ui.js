@@ -180,22 +180,35 @@ class UI {
         }
         return prices
       }, [])
-      const distancesPrice = prices.map((price) => Math.abs(price - trade.price))
-      const indexPrice = distancesPrice.indexOf(Math.min(...distancesPrice))
-      if (indexPrice !== 0 && indexPrice !== prices.length - 1) {
-        tradeNumbers[indexPrice] = {
-          tradePrice: chalk[colors.TRADE_PRICE](trade.price.toFixed(decimalPlaces))
+      if (prices.length > 1) {
+        const distance = prices[0] - prices[1]
+        const distancesPrice = prices.map((price) => Math.abs(price - trade.price))
+        const indexPrice = distancesPrice.indexOf(Math.min(...distancesPrice))
+        if (indexPrice === 0 && Math.abs(prices[0] - trade.price) < distance) {
+          tradeNumbers[indexPrice] = { tradePrice: chalk[colors.TRADE_PRICE](trade.price.toFixed(decimalPlaces)) }
+        } else if (indexPrice === prices.length - 1 && Math.abs(prices[prices.length - 1] - trade.price) < distance) {
+          tradeNumbers[indexPrice] = { tradePrice: chalk[colors.TRADE_PRICE](trade.price.toFixed(decimalPlaces)) }
+        } else if (indexPrice !== 0 && indexPrice !== prices.length - 1) {
+          tradeNumbers[indexPrice] = { tradePrice: chalk[colors.TRADE_PRICE](trade.price.toFixed(decimalPlaces)) }
         }
-      }
-      const distancesStopPrice = prices.map((price) => Math.abs(price - trade.stopPrice))
-      const indexStopPrice = distancesStopPrice.indexOf(Math.min(...distancesStopPrice))
-      if (indexStopPrice !== 0 && indexStopPrice !== prices.length - 1) {
-        tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
-      }
-      const distancesTargetPrice = prices.map((price) => Math.abs(price - trade.targetPrice))
-      const indexTargetPrice = distancesTargetPrice.indexOf(Math.min(...distancesTargetPrice))
-      if (indexTargetPrice !== 0 && indexTargetPrice !== prices.length - 1) {
-        tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
+        const distancesStopPrice = prices.map((price) => Math.abs(price - trade.stopPrice))
+        const indexStopPrice = distancesStopPrice.indexOf(Math.min(...distancesStopPrice))
+        if (indexStopPrice === 0 && Math.abs(prices[0] - trade.stopPrice) < distance) {
+          tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
+        } else if (indexStopPrice === prices.length - 1 && Math.abs(prices[prices.length - 1] - trade.stopPrice) < distance) {
+          tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
+        } else if (indexStopPrice !== 0 && indexStopPrice !== prices.length - 1) {
+          tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
+        }
+        const distancesTargetPrice = prices.map((price) => Math.abs(price - trade.targetPrice))
+        const indexTargetPrice = distancesTargetPrice.indexOf(Math.min(...distancesTargetPrice))
+        if (indexTargetPrice === 0 && Math.abs(prices[0] - trade.targetPrice) < distance) {
+          tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
+        } else if (indexTargetPrice === prices.length - 1 && Math.abs(prices[prices.length - 1] - trade.targetPrice) < distance) {
+          tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
+        } else if (indexTargetPrice !== 0 && indexTargetPrice !== prices.length - 1) {
+          tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
+        }
       }
     }
     const plotStyled = plot.reduce((plotStyled, line, index) => {
@@ -327,8 +340,9 @@ class UI {
   }
 
   renderEgg () {
+    if (this.egg) this.egg.unsubscribe()
     const fxs = ['glitch', 'karaoke', 'neon', 'pulse', 'radar', 'rainbow']
-    const animation = chalkAnimation[fxs[Math.floor(Math.random() * 6)]]('Potatoes and black holes').stop()
+    const animation = chalkAnimation[fxs[Math.floor(Math.random() * 6)]]('Potatoes and black holes '.repeat(Math.floor(Math.random() * 50) + 1)).stop()
     this.egg = timer(0, Math.floor(Math.random() * 49) + 2).subscribe(() => {
       this.display.setContent(animation.frame().slice(11))
       this.screen.render()

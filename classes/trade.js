@@ -10,11 +10,11 @@ const { errorToString, millisecondsToTime, timeframeToMilliseconds } = require('
 class Trade {
   constructor (advisorId, buy, chartId, id, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who) {
     const { tickSize } = info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
-    const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
     const spent = order.fills.reduce((spent, fill) => spent + parseFloat(fill.qty) * parseFloat(fill.price), 0)
     this.advisorId = advisorId
     this.buy = buy
     this.chartId = chartId
+    this.decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
     this.id = id
     this.info = info
     this.isLong = isLong
@@ -24,15 +24,15 @@ class Trade {
       date: new Date(),
       ...order
     }]
-    this.price = parseFloat((order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length).toFixed(decimalPlaces))
+    this.price = parseFloat((order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length).toFixed(this.decimalPlaces))
     this.profitTarget = parseFloat(strategy.config.profitTarget || 0) / 100
     this.quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
     this.sell = sell
     this.show = show
     this.stopLoss = parseFloat(strategy.config.stopLoss || 0) / 100
-    this.stopPrice = parseFloat((this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(decimalPlaces))
+    this.stopPrice = parseFloat((this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces))
     this.strategyName = strategy.name
-    this.targetPrice = parseFloat((this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(decimalPlaces))
+    this.targetPrice = parseFloat((this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces))
     this.updateFunds = updateFunds
     this.who = who
     this.setStop(stream)
@@ -132,11 +132,9 @@ class Trade {
             date: new Date(),
             ...order
           })
-          const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
-          const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
           const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
           const quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
-          this.log({ level: `close${type.charAt(0).toUpperCase() + type.slice(1)}`, message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(decimalPlaces)}` })
+          this.log({ level: `close${type.charAt(0).toUpperCase() + type.slice(1)}`, message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(this.decimalPlaces)}` })
           this.show()
           this.calculateStats()
           return resolve()
@@ -216,7 +214,7 @@ class Trade {
   }
 
   toString (log = false, who = true) {
-    const string = `${chalk.underline(this.id)} ${this.info.symbol} ${this.quantity}${chalk[this.isOpen ? 'cyan' : 'gray']('@')}${this.price} ${chalk[this.isOpen ? 'green' : 'gray']('TRGT ' + this.targetPrice)} ${chalk[this.isOpen ? 'red' : 'gray']('STOP ' + this.stopPrice)}`
+    const string = `${chalk.underline(this.id)} ${this.info.symbol} ${this.quantity}${chalk[this.isOpen ? 'cyan' : 'gray']('@')}${this.price.toFixed(this.decimalPlaces)} ${chalk[this.isOpen ? 'green' : 'gray']('TRGT ' + this.targetPrice.toFixed(this.decimalPlaces))} ${chalk[this.isOpen ? 'red' : 'gray']('STOP ' + this.stopPrice.toFixed(this.decimalPlaces))}`
     if (log) {
       return `${string} #avoidBlack${this.who}#`
     }
