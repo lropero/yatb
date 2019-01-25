@@ -1,5 +1,4 @@
 const asciichart = require('asciichart')
-const babar = require('babar')
 const blessed = require('blessed')
 const chalk = require('chalk')
 const chalkAnimation = require('chalk-animation')
@@ -12,7 +11,7 @@ const { formatMoney } = require('accounting-js')
 const { fromEvent, timer } = require('rxjs')
 const { pretty } = require('js-object-pretty-print')
 
-const { millisecondsToTime } = require('../helpers')
+const { millisecondsToTime, plotVolume } = require('../helpers')
 
 const colors = {
   CHART_BORDER: 'yellow',
@@ -23,11 +22,6 @@ const colors = {
   CHART_PRICE_OPEN: 'blue',
   CHART_PRICE_UP: 'cyan',
   CHART_TITLE: 'white',
-  CHART_VOLUME_DOWN: ['red', 'bgRed'],
-  CHART_VOLUME_NUMBER: 'yellow',
-  CHART_VOLUME_NUMBER_DOTS: 'gray',
-  CHART_VOLUME_OPEN: ['white', 'bgWhite'],
-  CHART_VOLUME_UP: ['green', 'bgGreen'],
   DISPLAY_BACKGROUND: 'black',
   DISPLAY_FOREGROUND: 'magenta',
   FOOTER_BACKGROUND: 'gray',
@@ -44,7 +38,13 @@ const colors = {
   LOGGER_FOREGROUND: 'white',
   TRADE_PRICE: 'yellow',
   TRADE_STOP: 'red',
-  TRADE_TARGET: 'green'
+  TRADE_TARGET: 'green',
+  VOLUME_BACKGROUND: 'bgBlack',
+  VOLUME_DOWN: 'red',
+  VOLUME_NUMBER: 'yellow',
+  VOLUME_NUMBER_DOTS: 'gray',
+  VOLUME_OPEN: 'gray',
+  VOLUME_UP: 'green'
 }
 
 class UI {
@@ -167,13 +167,13 @@ class UI {
     }
     let chartLength = 0
     const hasVolume = Math.ceil(this.screen.rows * 0.8) - 2 > 4
-    const plot = stripAnsi(asciichart.plot(candles.map((candle) => candle.close), {
+    const ascii = stripAnsi(asciichart.plot(candles.map((candle) => candle.close), {
       format: (close) => close.toFixed(decimalPlaces),
       height: hasVolume ? Math.ceil(this.screen.rows * 0.6) - 2 : Math.ceil(this.screen.rows * 0.8) - 2
     })).split('\n')
     const tradeNumbers = {}
     if (trade) {
-      const prices = plot.reduce((prices, line) => {
+      const prices = ascii.reduce((prices, line) => {
         const split = line.split(line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532))
         if (split.length === 2) {
           prices.push(split[0].trim())
@@ -211,76 +211,31 @@ class UI {
         }
       }
     }
-    const plotStyled = plot.reduce((plotStyled, line, index) => {
+    const asciiStyled = ascii.reduce((asciiStyled, line, index) => {
       const split = line.split(line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532))
       if (split.length === 2) {
         const price = split[0].trim()
         let drawing = chalk[colors.CHART_DRAWING](split[1].slice(0, -1))
         const isQuote = String.fromCharCode(9472, 9581, 9584).includes(stripAnsi(drawing).slice(-1))
-        if (!plotStyled.length) {
+        if (!asciiStyled.length) {
           chartLength = stripAnsi(drawing).length
           const title = chalk[colors.CHART_TITLE](`${advisor.name} - ${chart.name}`) + (trade ? ' ' + trade.toString(false, false) : '')
           if (chartLength > stripAnsi(title).length) {
             drawing = `${title} ${chalk[colors.CHART_DRAWING](stripAnsi(drawing).slice(stripAnsi(title).length + 1))}`
           }
         }
-        plotStyled.push(`${drawing}${chalk[colors.CHART_BORDER](String.fromCharCode(9474))}${trade && tradeNumbers[index] && tradeNumbers[index].tradePrice ? (trade.isLong ? chalk.cyan(figures.arrowUp) : chalk.magenta(figures.arrowDown)) : ' '}${isQuote ? chalk[quoteColor](quote.toFixed(decimalPlaces)) : ((tradeNumbers[index] && tradeNumbers[index].tradePrice) || tradeNumbers[index] || chalk[colors.CHART_PRICE](price))}`)
-        return plotStyled
+        asciiStyled.push(`${drawing}${chalk[colors.CHART_BORDER](String.fromCharCode(9474))}${trade && tradeNumbers[index] && tradeNumbers[index].tradePrice ? (trade.isLong ? chalk.cyan(figures.arrowUp) : chalk.magenta(figures.arrowDown)) : ' '}${isQuote ? chalk[quoteColor](quote.toFixed(decimalPlaces)) : ((tradeNumbers[index] && tradeNumbers[index].tradePrice) || tradeNumbers[index] || chalk[colors.CHART_PRICE](price))}`)
+        return asciiStyled
       }
     }, []).join('\n')
     if (hasVolume) {
-      const volume = stripAnsi(babar(candles.map((candle, index) => [index, candle.volume]), {
-        height: Math.ceil(this.screen.rows * 0.8) - plot.length,
-        width: this.screen.cols,
-        yFractions: 0
-      })).split('\n')
-      const volumeStyled = volume.reduce((volumeStyled, line) => {
-        if (line.includes(String.fromCharCode(95)) || line.includes(String.fromCharCode(9604))) {
-          const matches = /\s*(\d+)\s{1}(.*)/.exec(line)
-          if (matches && matches.length === 3) {
-            const number = matches[1].trim()
-            let drawing = ''
-            const offset = matches[2].length - chartLength
-            if (offset >= 0) {
-              matches[2] = matches[2].slice(offset)
-            } else {
-              matches[2] = `${new Array(Math.abs(offset) + 1).join(String.fromCharCode(95))}${matches[2]}`
-            }
-            matches[2].split('').map((character, index) => {
-              if (candles[index + 1]) {
-                let bgColor = colors.CHART_VOLUME_OPEN[1]
-                let color = colors.CHART_VOLUME_OPEN[0]
-                if (candles[index + 1].close > candles[index + 1].open) {
-                  bgColor = colors.CHART_VOLUME_UP[1]
-                  color = colors.CHART_VOLUME_UP[0]
-                } else if (candles[index + 1].close < candles[index + 1].open) {
-                  bgColor = colors.CHART_VOLUME_DOWN[1]
-                  color = colors.CHART_VOLUME_DOWN[0]
-                }
-                const code = matches[2].charCodeAt(index)
-                switch (code) {
-                  case 32: {
-                    drawing += chalk[bgColor](' ')
-                    break
-                  }
-                  case 95: {
-                    drawing += (volumeStyled.length ? ' ' : chalk[colors.CHART_BORDER](String.fromCharCode(9472)))
-                    break
-                  }
-                  default: {
-                    drawing += chalk[color](String.fromCharCode(code))
-                  }
-                }
-              }
-            })
-            volumeStyled.push(`${drawing}${chalk[colors.CHART_BORDER](volumeStyled.length ? String.fromCharCode(9474) : String.fromCharCode(9508))} ${chalk[colors.CHART_VOLUME_NUMBER](number) + chalk[colors.CHART_VOLUME_NUMBER_DOTS](''.padStart(quote.toString().split('.')[0].length + decimalPlaces - number.length + 1, String.fromCharCode(183)))}`)
-          }
-        }
-        return volumeStyled
-      }, []).join('\n')
-      this.display.setContent([plotStyled, volumeStyled].join('\n'))
+      this.display.setContent([asciiStyled, plotVolume(candles.slice(1), {
+        colors,
+        height: Math.ceil(this.screen.rows * 0.8) - ascii.length - 1,
+        width: this.screen.cols
+      })].join('\n'))
     } else {
-      this.display.setContent(plotStyled)
+      this.display.setContent(asciiStyled)
     }
     this.screen.render()
   }

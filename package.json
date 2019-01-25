@@ -1,6 +1,6 @@
 {
   "name": "cryptobot",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "CryptoBot",
   "main": "index.js",
   "author": "Luciano Ropero <lropero@gmail.com>",
@@ -9,7 +9,6 @@
   "dependencies": {
     "accounting-js": "^1.1.1",
     "asciichart": "^1.5.7",
-    "babar": "^0.2.0",
     "beepbeep": "^1.2.2",
     "blessed": "^0.1.81",
     "bottleneck": "^2.15.3",
@@ -24,7 +23,7 @@
     "rxjs": "^6.3.3",
     "sfx": "^0.1.1",
     "strip-ansi": "^5.0.0",
-    "tulind": "^0.8.13",
+    "tulind": "^0.8.14",
     "write": "^1.0.3"
   },
   "devDependencies": {

@@ -20,7 +20,6 @@ class Bot {
     this.limiter = new Bottleneck({ maxConcurrent: 1, minTime: 300 })
     this.logs = []
     this.notifications = new Subject()
-    this.tradeCounter = 0
     this.trades = []
     this.initialize(config)
   }
@@ -163,7 +162,7 @@ class Bot {
                 }),
                 chartId,
                 exchangeInfo: this.exchangeInfo,
-                id: `T${this.tradeCounter + 1}`,
+                id: `T${this.trades.length + 1}`,
                 isLong,
                 log: (event) => this.log(event),
                 quantity,
@@ -190,11 +189,7 @@ class Bot {
                 }),
                 who
               })
-              this.tradeCounter++
               this.trades.push(trade)
-              while (this.trades.length > 50) {
-                this.trades.shift()
-              }
               this.show()
             } catch (error) {
               return reject(error)
@@ -445,9 +440,6 @@ class Bot {
       console.log(log.toString(true))
     }
     this.logs.push(log)
-    while (this.logs.length > 1000) {
-      this.logs.shift()
-    }
     if (this.currentMode === 'l') {
       if (this.readMore) {
         this.readMore++
