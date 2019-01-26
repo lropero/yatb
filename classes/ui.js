@@ -36,11 +36,14 @@ const colors = {
   FUNDS_TITLE: 'white',
   LOGGER_BACKGROUND: 'gray',
   LOGGER_FOREGROUND: 'white',
+  TRADE_LONG: 'cyan',
   TRADE_PRICE: 'yellow',
+  TRADE_SHORT: 'magenta',
   TRADE_STOP: 'red',
   TRADE_TARGET: 'green',
   VOLUME_BACKGROUND: 'bgBlack',
   VOLUME_DOWN: 'red',
+  VOLUME_FOREGROUND: 'gray',
   VOLUME_NUMBER: 'yellow',
   VOLUME_NUMBER_DOTS: 'gray',
   VOLUME_OPEN: 'gray',
@@ -224,7 +227,7 @@ class UI {
             drawing = `${title} ${chalk[colors.CHART_DRAWING](stripAnsi(drawing).slice(stripAnsi(title).length + 1))}`
           }
         }
-        asciiStyled.push(`${drawing}${chalk[colors.CHART_BORDER](String.fromCharCode(9474))}${trade && tradeNumbers[index] && tradeNumbers[index].tradePrice ? (trade.isLong ? chalk.cyan(figures.arrowUp) : chalk.magenta(figures.arrowDown)) : ' '}${isQuote ? chalk[quoteColor](quote.toFixed(decimalPlaces)) : ((tradeNumbers[index] && tradeNumbers[index].tradePrice) || tradeNumbers[index] || chalk[colors.CHART_PRICE](price))}`)
+        asciiStyled.push(`${drawing}${chalk[colors.CHART_BORDER](String.fromCharCode(9474))}${trade && tradeNumbers[index] && tradeNumbers[index].tradePrice ? (trade.isLong ? chalk[colors.TRADE_LONG](figures.arrowUp) : chalk[colors.TRADE_SHORT](figures.arrowDown)) : ' '}${isQuote ? chalk[quoteColor](quote.toFixed(decimalPlaces)) : ((tradeNumbers[index] && tradeNumbers[index].tradePrice) || tradeNumbers[index] || chalk[colors.CHART_PRICE](price))}`)
         return asciiStyled
       }
     }, []).join('\n')
@@ -242,7 +245,7 @@ class UI {
 
   renderClose () {
     if (this.egg) this.egg.unsubscribe()
-    this.display.setContent(chalk.magenta(figures.play) + ' ' + chalk.white('Really close all trades?') + ' ' + chalk.gray(`Press ${chalk.yellow('Y')} to confirm`))
+    this.display.setContent(chalk[colors.DISPLAY_FOREGROUND](figures.play) + ' ' + chalk.white('Really close all trades?') + ' ' + chalk.gray(`Press ${chalk.yellow('Y')} to confirm`))
     this.screen.render()
   }
 
@@ -331,7 +334,7 @@ class UI {
 
   renderQuit () {
     if (this.egg) this.egg.unsubscribe()
-    this.display.setContent(chalk.magenta(figures.play) + ' ' + chalk.white('Really quit?') + ' ' + chalk.gray(`Press ${chalk.yellow('Y')} to confirm`))
+    this.display.setContent(chalk[colors.DISPLAY_FOREGROUND](figures.play) + ' ' + chalk.white('Really quit?') + ' ' + chalk.gray(`Press ${chalk.yellow('Y')} to confirm`))
     this.screen.render()
   }
 

@@ -26,7 +26,7 @@ function plotVolume (candles, { colors, height, width }) {
         } else if (i === 0) {
           line.push(chalk[colors.VOLUME_BACKGROUND](chalk[colors.CHART_BORDER](String.fromCharCode(9480))))
         } else {
-          line.push(chalk[colors.VOLUME_BACKGROUND](' '))
+          line.push(chalk[colors.VOLUME_BACKGROUND](chalk[colors.VOLUME_FOREGROUND](String.fromCharCode(9480))))
         }
       } else if (j === volumes.length) {
         line.push(chalk[colors.VOLUME_BACKGROUND](chalk[colors.CHART_BORDER](String.fromCharCode(9474))))

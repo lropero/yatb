@@ -261,10 +261,11 @@ class Bot {
         break
       }
       case 'k': {
+        const trades = this.trades.filter((trade) => trade.isOpen)
         if (this.currentMode === 'q') {
           this.currentMode = 'ee'
           this.show()
-        } else if (this.trades.length) {
+        } else if (trades.length) {
           this.currentMode = 'k'
           this.show()
         }
