@@ -33,22 +33,11 @@ class Trade {
     this.stopPrice = parseFloat((this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces))
     this.strategyName = strategy.name
     this.targetPrice = parseFloat((this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces))
+    this.timeToLive = timeframeToMilliseconds(strategy.config.timeToLive || 0)
     this.updateFunds = updateFunds
     this.who = who
-    this.setStop(stream)
-    this.setTarget(stream)
+    this.subscribe(stream)
     this.log({ level: this.isLong ? 'long' : 'short', message: this.toString(true) })
-    const timeToLive = timeframeToMilliseconds(strategy.config.timeToLive || 0)
-    if (timeToLive > 0) {
-      this.timer = timer(timeToLive).subscribe(async () => {
-        try {
-          await this.close('expire')
-        } catch (error) {
-          this.log(error)
-        }
-      })
-      this.timeToLive = timeToLive
-    }
   }
 
   static initialize ({ advisorId, buy, chartId, exchangeInfo, id, isLong, log, quantity, sell, show, signal, strategy, stream, symbol, updateFunds, who }) {
@@ -149,24 +138,6 @@ class Trade {
     })
   }
 
-  resubscribe (stream) {
-    if (this.isOpen) {
-      this.setStop(stream)
-      this.setTarget(stream)
-      if (this.timer && this.timeToLive > 0) {
-        this.timer.unsubscribe()
-        const timeRemaining = new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date()
-        this.timer = timer(timeRemaining).subscribe(async () => {
-          try {
-            await this.close('expire')
-          } catch (error) {
-            this.log(error)
-          }
-        })
-      }
-    }
-  }
-
   setStop (stream) {
     if (this.stop) {
       this.stop.unsubscribe()
@@ -211,6 +182,26 @@ class Trade {
         }
       })
     ).subscribe()
+  }
+
+  subscribe (stream) {
+    if (this.isOpen) {
+      if (this.timer) {
+        this.timer.unsubscribe()
+      }
+      this.setStop(stream)
+      this.setTarget(stream)
+      if (this.timeToLive > 0) {
+        const timeRemaining = new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date()
+        this.timer = timer(timeRemaining).subscribe(async () => {
+          try {
+            await this.close('expire')
+          } catch (error) {
+            this.log(error)
+          }
+        })
+      }
+    }
   }
 
   toString (log = false, who = true) {

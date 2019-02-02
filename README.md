@@ -2,7 +2,7 @@
 *Potatoes and black holes*
 
 ### Requires
-- Node v10.15.0
+- Node v10.15.1
 - Yarn v1.13.0
 
 ### Installation
@@ -25,6 +25,7 @@ $ yarn run start
 - "f" -> Show funds
 - "k" -> Close trades
 - "l" -> Show logs
+- "p" -> Pause/unpause trading
 - "q" -> Quit
 - "t" -> Show trades
 - "v" -> Show trade details (from chart with trade)

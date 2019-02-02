@@ -3,45 +3,66 @@
  * http://www.swing-trade-stocks.com/traders-action-zone.html
  * (good for trending-up markets)
  */
-const config = require('./config')
 
 class Strategy {
-  static analyze (candles, isFinal) {
+  static analyze (candles, isFinal, params) {
     return new Promise((resolve, reject) => {
       const signals = []
       if (candles.length < 2) {
         return resolve(signals)
       }
-      const { indicators: { fast30, slow10 } } = candles[0]
-      const { indicators: { fast30: prevFast30, slow10: prevSlow10 } } = candles[1]
-      if (slow10.sma > fast30.ema) { // Market is trending up
+      const { indicators: { fast, slow } } = candles[0]
+      const { indicators: { fast: prevFast, slow: prevSlow } } = candles[1]
+      if (slow.sma > fast.ema) { // Market is trending up
         if (isFinal) { // Last candle is final
-          if (candles[0].close > fast30.ema && candles[0].close < slow10.sma) { // Price is in the zone
-            if (candles[1].close > prevSlow10.sma) { // Previous price wasn't
+          if (candles[0].close > fast.ema && candles[0].close < slow.sma) { // Price is in the zone
+            if (candles[1].close > prevSlow.sma) { // Previous price wasn't
               signals.push('LONG')
             }
           }
         }
-      } else if (prevSlow10.sma > prevFast30.ema) { // Market stopped trending up
+      } else if (prevSlow.sma > prevFast.ema) { // Market stopped trending up
         signals.push('CLOSE LONG')
       }
-      if (slow10.sma < fast30.ema) { // Market is trending down
+      if (slow.sma < fast.ema) { // Market is trending down
         if (isFinal) { // Last candle is final
-          if (candles[0].close < fast30.ema && candles[0].close > slow10.sma) { // Price is in the zone
-            if (candles[1].close < prevSlow10.sma) { // Previous price wasn't
+          if (candles[0].close < fast.ema && candles[0].close > slow.sma) { // Price is in the zone
+            if (candles[1].close < prevSlow.sma) { // Previous price wasn't
               signals.push('SHORT')
             }
           }
         }
-      } else if (prevSlow10.sma < prevFast30.ema) { // Market stopped trending down
+      } else if (prevSlow.sma < prevFast.ema) { // Market stopped trending down
         signals.push('CLOSE SHORT')
       }
       return resolve(signals)
     })
   }
 
-  static getConfig () {
-    return config
+  static getIndicators (paramsIndicators) {
+    if (paramsIndicators.length !== 2) {
+      return false
+    }
+    return {
+      'fast': {
+        type: 'ema',
+        inputs: {
+          real: 'close'
+        },
+        options: {
+          period: paramsIndicators[0]
+        }
+      },
+      'slow': {
+        type: 'sma',
+        inputs: {
+          real: 'close'
+        },
+        options: {
+          period: paramsIndicators[1]
+        }
+      }
+    }
   }
 }
 

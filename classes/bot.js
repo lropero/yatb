@@ -20,6 +20,7 @@ class Bot {
     this.limiter = new Bottleneck({ maxConcurrent: 1, minTime: 300 })
     this.logs = []
     this.notifications = new Subject()
+    this.paused = false
     this.trades = []
     this.initialize(config)
   }
@@ -35,9 +36,8 @@ class Bot {
         if (!(typeof advisorConfig === 'object') || Array.isArray(advisorConfig)) {
           return reject(new Error(`Advisor ${advisorName} not properly configured`))
         }
-        const margin = parseFloat(advisorConfig.margin || 0)
         const sights = advisorConfig.sights || []
-        if ((!(margin > 0) || margin > 100) || !Array.isArray(sights) || !sights.length) {
+        if (!Array.isArray(sights) || !sights.length) {
           return reject(new Error(`Advisor ${advisorName} not properly configured`))
         }
         const chartConfigs = await Advisor.getChartConfigs(sights)
@@ -59,7 +59,7 @@ class Bot {
           })),
           toArray()
         ).subscribe((chartIds) => {
-          const advisor = new Advisor(advisorName, chartIds, margin)
+          const advisor = new Advisor(advisorName, chartIds)
           this.advisors[advisorId] = advisor
           this.log({ level: 'success', message: `Advisor ${advisorName} running` })
           return resolve()
@@ -92,20 +92,22 @@ class Bot {
   }
 
   analyzeChart ({ chartId, candles, isFinal }) {
-    Object.keys(this.advisors).map(async (advisorId) => {
-      const advisor = this.advisors[advisorId]
-      if (advisor.chartIds.includes(chartId)) {
-        const chart = this.charts[chartId]
-        try {
-          const advices = (await Promise.all(advisor.analyze(candles, chart.config.strategies, isFinal))).filter((advice) => advice)
-          if (advices.length) {
-            advices.map((advice) => this.notifications.next({ type: 'DIGEST_ADVICE', payload: { advisorId, chartId, ...advice } }))
+    if (!this.paused) {
+      Object.keys(this.advisors).map(async (advisorId) => {
+        const advisor = this.advisors[advisorId]
+        if (advisor.chartIds.includes(chartId)) {
+          const chart = this.charts[chartId]
+          try {
+            const advices = (await Promise.all(advisor.analyze(candles, chart.config.strategies, isFinal))).filter((advice) => advice)
+            if (advices.length) {
+              advices.map((advice) => this.notifications.next({ type: 'DIGEST_ADVICE', payload: { advisorId, chartId, ...advice } }))
+            }
+          } catch (error) {
+            this.log(error)
           }
-        } catch (error) {
-          this.log(error)
         }
-      }
-    })
+      })
+    }
   }
 
   closeTrades () {
@@ -146,7 +148,7 @@ class Bot {
           const shortsSellingBackAsset = this.trades.filter((trade) => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
           const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
           const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
-          const amount = funds * advisor.margin
+          const amount = funds * parseFloat(strategy.config.margin || 0) / 100
           const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
           if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
             try {
@@ -286,6 +288,11 @@ class Bot {
         this.show()
         break
       }
+      case 'p': {
+        this.paused = !this.paused
+        this.log({ level: 'info', message: this.paused ? 'Trading paused' : 'Trading unpaused' })
+        break
+      }
       case 'q': {
         this.currentMode = 'q'
         this.show()
@@ -398,6 +405,7 @@ class Bot {
           f: () => this.handleKeyPress('f'), // Show funds
           k: () => this.handleKeyPress('k'), // Close trades
           l: () => this.handleKeyPress('l'), // Show logs
+          p: () => this.handleKeyPress('p'), // Pause/unpause trading
           q: () => this.handleKeyPress('q'), // Quit
           t: () => this.handleKeyPress('t'), // Show trades
           v: () => this.handleKeyPress('v'), // Show trade details (from chart with trade)
@@ -467,7 +475,7 @@ class Bot {
 
   resubscribeTradesToNewStream ({ chartId, stream }) {
     const trades = this.trades.filter((trade) => trade.chartId === chartId && trade.isOpen)
-    trades.map((trade) => trade.resubscribe(stream))
+    trades.map((trade) => trade.subscribe(stream))
   }
 
   retrieveExchangeInfo () {

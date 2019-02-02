@@ -4,10 +4,9 @@ const tulind = require('tulind')
 const { errorToString } = require('../helpers')
 
 class Advisor {
-  constructor (name, chartIds, margin) {
+  constructor (name, chartIds) {
     this.name = name
     this.chartIds = chartIds
-    this.margin = margin / 100
   }
 
   static getChartConfigs (sights) {
@@ -33,17 +32,18 @@ class Advisor {
               return reject(new Error(`Sight #${index + 1}: Strategy #${jndex + 1} not properly configured`))
             }
             const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
-            const profitTarget = parseFloat(strategies[strategyId].profitTarget || 0)
-            const stopLoss = parseFloat(strategies[strategyId].stopLoss || 0)
-            if (!(profitTarget > 0) || (!(stopLoss > 0) || stopLoss > 100)) {
+            const strategyConfig = strategies[strategyId]
+            const margin = parseFloat(strategyConfig.margin || 0)
+            const profitTarget = parseFloat(strategyConfig.profitTarget || 0)
+            const stopLoss = parseFloat(strategyConfig.stopLoss || 0)
+            if ((!(margin > 0) || margin > 100) || !(profitTarget > 0) || (!(stopLoss > 0) || stopLoss > 100)) {
               return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName} not properly configured`))
             }
             if (!fs.existsSync(`./strategies/${strategyId}/index.js`)) {
               return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName} doesn't exist`))
             }
             const Strategy = require(`../strategies/${strategyId}`)
-            const strategyConfig = Strategy.getConfig()
-            const { indicators = {} } = strategyConfig
+            const indicators = typeof Strategy.getIndicators === 'function' ? Strategy.getIndicators(strategyConfig.paramsIndicators || []) : {}
             if (!(indicators instanceof Object) || Array.isArray(indicators)) {
               return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicators not properly configured`))
             }
@@ -85,19 +85,19 @@ class Advisor {
   analyze (candles, strategies, isFinal) {
     return Object.keys(strategies).map((strategyId) => new Promise(async (resolve, reject) => {
       const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
+      const strategyConfig = strategies[strategyId]
       try {
         if (!fs.existsSync(`./strategies/${strategyId}/index.js`)) {
           return reject(new Error(`Strategy ${strategyName} doesn't exist`))
         }
-        delete require.cache[require.resolve(`../strategies/${strategyId}`)]
         const Strategy = require(`../strategies/${strategyId}`)
-        const signals = await Strategy.analyze(candles, isFinal)
+        const signals = await Strategy.analyze(candles, isFinal, strategyConfig.params || [])
         if (signals.length) {
           signals.sort()
           return resolve({
             signals: signals.filter((value, index, self) => self.indexOf(value) === index),
             strategy: {
-              config: strategies[strategyId],
+              config: strategyConfig,
               name: strategyName
             }
           })
