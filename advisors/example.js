@@ -6,7 +6,7 @@ module.exports = {
       strategies: {
         'vsa': {
           margin: '10%',
-          params: [120, 50, 25, 10, 20, 0.7],
+          params: [50, 25, 120, 10, 20, 0.7],
           profitTarget: '2%',
           stopLoss: '1%',
           timeToLive: '30m'
@@ -19,7 +19,7 @@ module.exports = {
       strategies: {
         'vsa': {
           margin: '10%',
-          params: [60, 50, 25, 10, 20, 0.7],
+          params: [50, 25, 60, 8, 16, 0.7],
           profitTarget: '2%',
           stopLoss: '1%',
           timeToLive: '1h'
@@ -39,7 +39,7 @@ module.exports = {
         },
         'vsa': {
           margin: '20%',
-          params: [60, 50, 25, 10, 20, 0.7],
+          params: [50, 25, 60, 8, 16, 0.7],
           profitTarget: '2%',
           stopLoss: '1%',
           timeToLive: '1h'
@@ -52,7 +52,7 @@ module.exports = {
       strategies: {
         'vsa': {
           margin: '30%',
-          params: [100, 50, 25, 10, 20, 0.6],
+          params: [50, 25, 32, 5, 10, 0.6],
           profitTarget: '3%',
           stopLoss: '2%',
           timeToLive: '2h'
@@ -65,7 +65,7 @@ module.exports = {
       strategies: {
         'vsa': {
           margin: '50%',
-          params: [100, 50, 25, 10, 20, 0.6],
+          params: [50, 25, 12, 3, 5, 0.6],
           profitTarget: '5%',
           stopLoss: '2%',
           timeToLive: '4h'
@@ -78,7 +78,7 @@ module.exports = {
       strategies: {
         'vsa': {
           margin: '50%',
-          params: [100, 50, 25, 10, 20, 0.5],
+          params: [50, 25, 10, 2, 4, 0.5],
           profitTarget: '5%',
           stopLoss: '2%',
           timeToLive: '1d'
@@ -91,7 +91,7 @@ module.exports = {
       strategies: {
         'vsa': {
           margin: '80%',
-          params: [100, 50, 25, 10, 20, 0.5],
+          params: [50, 25, 10, 2, 4, 0.5],
           profitTarget: '5%',
           stopLoss: '2%'
         }
@@ -103,7 +103,7 @@ module.exports = {
       strategies: {
         'vsa': {
           margin: '20%',
-          params: [60, 50, 25, 10, 20, 0.7],
+          params: [50, 25, 60, 8, 16, 0.7],
           profitTarget: '2%',
           stopLoss: '1%',
           timeToLive: '1h'

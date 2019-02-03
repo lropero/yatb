@@ -11,7 +11,7 @@ class Strategy {
         return reject(new Error('Wrong number of params'))
       }
       const signals = []
-      if (candles.length < 2) {
+      if (candles.length < 2 || candles.length < params[0]) {
         return resolve(signals)
       }
       const { indicators: { fast, slow } } = candles[0]
