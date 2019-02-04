@@ -18,11 +18,7 @@ function plotVolume (candles, { colors, height, width }) {
           } else if (candle.close < candle.open) {
             color = colors.VOLUME_DOWN
           }
-          if (heights[j] - height - i + 1 === 0.5) {
-            line.push(chalk[colors.VOLUME_BACKGROUND](chalk[color](String.fromCharCode(9604))))
-          } else {
-            line.push(chalk[color].inverse(' '))
-          }
+          line.push(height - i === Math.ceil(heights[j]) && heights[j] % 1 ? chalk[colors.VOLUME_BACKGROUND](chalk[color](String.fromCharCode(9604))) : chalk[color].inverse(' '))
         } else if (i === 0) {
           line.push(chalk[colors.VOLUME_BACKGROUND](chalk[colors.CHART_BORDER](String.fromCharCode(9480))))
         } else {
