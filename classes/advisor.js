@@ -26,7 +26,7 @@ class Advisor {
           if (!(strategies instanceof Object) || Array.isArray(strategies)) {
             return reject(new Error(`Sight #${index + 1}: Strategies not properly configured`))
           }
-          const indicatorsCurated = {}
+          const indicators = {}
           Object.keys(strategies).map((strategyId, jndex) => {
             if (typeof strategyId !== 'string' || !strategyId.length) {
               return reject(new Error(`Sight #${index + 1}: Strategy #${jndex + 1} not properly configured`))
@@ -43,32 +43,32 @@ class Advisor {
               return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName} doesn't exist`))
             }
             const Strategy = require(`../strategies/${strategyId}`)
-            const indicators = typeof Strategy.getIndicators === 'function' ? Strategy.getIndicators(strategyConfig.paramsIndicators || []) : {}
-            if (!(indicators instanceof Object) || Array.isArray(indicators)) {
+            const configIndicators = typeof Strategy.getConfigIndicators === 'function' ? Strategy.getConfigIndicators(strategyConfig.paramsIndicators || []) : {}
+            if (!(configIndicators instanceof Object) || Array.isArray(configIndicators)) {
               return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicators not properly configured`))
             }
-            Object.keys(indicators).map((indicatorId, kndex) => {
+            Object.keys(configIndicators).map((indicatorId, kndex) => {
               if (typeof indicatorId !== 'string' || !indicatorId.length) {
                 return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator #${kndex + 1} not properly configured`))
               }
               const indicatorName = indicatorId.charAt(0).toUpperCase() + indicatorId.slice(1).toLowerCase()
-              if (indicatorsCurated[indicatorId]) {
+              if (indicators[indicatorId]) {
                 return reject(new Error(`Sight #${index + 1}: Parallel strategies sharing indicator ID`))
               }
-              const { type = '' } = indicators[indicatorId]
+              const { type = '' } = configIndicators[indicatorId]
               if (typeof type !== 'string' || !type.length) {
                 return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} not properly configured`))
               }
               if (!tulind.indicators[type.toLowerCase()]) {
                 return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} doesn't exist`))
               }
-              indicatorsCurated[indicatorId] = indicators[indicatorId]
+              indicators[indicatorId] = configIndicators[indicatorId]
             })
           })
-          if (Object.keys(indicatorsCurated).length) {
+          if (Object.keys(indicators).length) {
             chartConfigs.push({
               ...sight,
-              indicators: indicatorsCurated
+              indicators
             })
           } else {
             chartConfigs.push(sight)

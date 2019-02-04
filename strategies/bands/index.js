@@ -27,7 +27,7 @@ class Strategy {
     })
   }
 
-  static getIndicators (paramsIndicators) {
+  static getConfigIndicators (paramsIndicators) {
     if (paramsIndicators.length !== 2) {
       return false
     }

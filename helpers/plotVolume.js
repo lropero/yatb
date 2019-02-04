@@ -10,7 +10,7 @@ function plotVolume (candles, { colors, height, width }) {
     const number = ((highestVolume / height) * (height - i)).toFixed(0)
     for (let j = 0; j < width; j++) {
       if (j < volumes.length) {
-        if (height - i <= heights[j]) {
+        if (height - i <= Math.ceil(heights[j])) {
           const candle = candles[j]
           let color = colors.VOLUME_OPEN
           if (candle.close > candle.open) {
@@ -18,7 +18,7 @@ function plotVolume (candles, { colors, height, width }) {
           } else if (candle.close < candle.open) {
             color = colors.VOLUME_DOWN
           }
-          if (heights[j] - (height - i) === 0.5) {
+          if (heights[j] - height - i + 1 === 0.5) {
             line.push(chalk[colors.VOLUME_BACKGROUND](chalk[color](String.fromCharCode(9604))))
           } else {
             line.push(chalk[color].inverse(' '))
