@@ -32,7 +32,7 @@ module.exports = {
       strategies: {
         'tazv': {
           margin: '10%',
-          params: [5],
+          params: [16],
           paramsIndicators: [30, 10],
           profitTarget: '1%',
           stopLoss: '1%'
