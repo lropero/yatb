@@ -300,7 +300,8 @@ class UI {
   renderEgg () {
     if (this.egg) this.egg.unsubscribe()
     const fxs = ['glitch', 'karaoke', 'neon', 'pulse', 'radar', 'rainbow']
-    const animation = chalkAnimation[fxs[Math.floor(Math.random() * 6)]]('potatoes and black holes and '.repeat(Math.floor(Math.random() * 50) + 1)).stop()
+    const potatoes = 'potatoes and black holes and '.repeat(Math.floor(Math.random() * 50) + 1)
+    const animation = chalkAnimation[fxs[Math.floor(Math.random() * 6)]](potatoes.slice(0, potatoes.length - 5)).stop()
     this.egg = timer(0, Math.floor(Math.random() * 49) + 2).subscribe(() => {
       this.display.setContent(animation.frame().slice(11))
       this.screen.render()
