@@ -291,6 +291,14 @@ class Bot {
       case 'p': {
         this.paused = !this.paused
         this.log({ level: 'info', message: this.paused ? 'Trading paused' : 'Trading unpaused' })
+        if (this.paused) {
+          this.unpause = timer(1000 * 60 * 60 * 24).subscribe(() => {
+            this.paused = false
+            this.log({ level: 'info', message: 'Trading unpaused' })
+          })
+        } else if (this.unpause) {
+          this.unpause.unsubscribe()
+        }
         break
       }
       case 'q': {

@@ -1,6 +1,6 @@
 {
   "name": "cryptobot",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "CryptoBot",
   "main": "index.js",
   "author": "Luciano Ropero <lropero@gmail.com>",
