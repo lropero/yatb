@@ -142,16 +142,16 @@ class Bot {
         }
         case 'LONG':
         case 'SHORT': {
-          const isLong = signal === 'LONG'
-          const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
-          const longsSellingBackAsset = this.trades.filter((trade) => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
-          const shortsSellingBackAsset = this.trades.filter((trade) => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
-          const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
-          const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
-          const amount = funds * parseFloat(strategy.config.margin || 0) / 100
-          const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
-          if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
-            try {
+          try {
+            const isLong = signal === 'LONG'
+            const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
+            const longsSellingBackAsset = this.trades.filter((trade) => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
+            const shortsSellingBackAsset = this.trades.filter((trade) => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
+            const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
+            const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
+            const amount = funds * parseFloat(strategy.config.margin || 0) / 100
+            const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
+            if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
               const trade = await Trade.initialize({
                 advisorId,
                 buy: (quantity, info) => new Promise(async (resolve, reject) => {
@@ -193,9 +193,9 @@ class Bot {
               })
               this.trades.push(trade)
               this.show()
-            } catch (error) {
-              return reject(error)
             }
+          } catch (error) {
+            return reject(error)
           }
           return resolve()
         }
