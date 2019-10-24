@@ -32,7 +32,7 @@ class Strategy {
       return false
     }
     return {
-      'bands': {
+      bands: {
         type: 'bbands',
         inputs: {
           real: 'close'

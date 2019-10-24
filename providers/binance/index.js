@@ -29,7 +29,7 @@ class Provider {
         }
         this.api.marketBuy(info.symbol, quantity.toFixed(info.quotePrecision), (error, response) => {
           if (error) {
-            const fileName = `logs/errorBuy.${format(new Date(), 'YYMMDDHHmmss')}.log`
+            const fileName = `logs/errorBuy.${format(new Date(), 'yyMMddHHmmss')}.log`
             writeFile(fileName, pretty(error, 2), () => {})
             return reject(new Error(`${error.statusMessage || errorToString(error)}`))
           }
@@ -41,29 +41,23 @@ class Provider {
     }))
   }
 
-  clampQuantity (amount, info, isLong = false) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        let quantity = amount
-        if (isLong) {
-          const quote = await this.getQuote(info.symbol)
-          const { minNotional } = info.filters.find((filter) => filter.filterType === 'MIN_NOTIONAL')
-          const { minQty } = info.filters.find((filter) => filter.filterType === 'LOT_SIZE')
-          quantity /= quote
-          if (quantity < minQty) {
-            quantity = minQty
-          }
-          if (quantity * quote < minNotional) {
-            quantity = minNotional / quote
-          }
-        }
-        const { stepSize } = info.filters.find((filter) => filter.filterType === 'LOT_SIZE')
-        quantity = this.api.roundStep(quantity, stepSize)
-        return resolve(parseFloat(quantity))
-      } catch (error) {
-        return reject(error)
+  async clampQuantity (amount, info, isLong = false) {
+    let quantity = amount
+    if (isLong) {
+      const quote = await this.getQuote(info.symbol)
+      const { minNotional } = info.filters.find((filter) => filter.filterType === 'MIN_NOTIONAL')
+      const { minQty } = info.filters.find((filter) => filter.filterType === 'LOT_SIZE')
+      quantity /= quote
+      if (quantity < minQty) {
+        quantity = minQty
       }
-    })
+      if (quantity * quote < minNotional) {
+        quantity = minNotional / quote
+      }
+    }
+    const { stepSize } = info.filters.find((filter) => filter.filterType === 'LOT_SIZE')
+    quantity = this.api.roundStep(quantity, stepSize)
+    return parseFloat(quantity)
   }
 
   getQuote (symbol) {
@@ -201,7 +195,7 @@ class Provider {
         }
         this.api.marketSell(info.symbol, quantity.toFixed(info.baseAssetPrecision), (error, response) => {
           if (error) {
-            const fileName = `logs/errorSell.${format(new Date(), 'YYMMDDHHmmss')}.log`
+            const fileName = `logs/errorSell.${format(new Date(), 'yyMMddHHmmss')}.log`
             writeFile(fileName, pretty(error, 2), () => {})
             return reject(new Error(`${error.statusMessage || errorToString(error)}`))
           }

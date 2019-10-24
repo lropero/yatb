@@ -44,7 +44,7 @@ class Strategy {
       return false
     }
     return {
-      'fast': {
+      fast: {
         type: 'ema',
         inputs: {
           real: 'close'
@@ -53,7 +53,7 @@ class Strategy {
           period: paramsIndicators[0]
         }
       },
-      'slow': {
+      slow: {
         type: 'sma',
         inputs: {
           real: 'close'

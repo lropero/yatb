@@ -33,12 +33,9 @@ class Log {
         beep()
         break
       }
-      case 'long': {
-        Math.floor(Math.random() * 100) > 0 ? sfx.play('pop') : sfx.say('che boludo, metí un largo')
-        break
-      }
+      case 'long':
       case 'short': {
-        Math.floor(Math.random() * 100) > 0 ? sfx.play('pop') : sfx.say('che boludo, metí un corto')
+        sfx.play('pop')
         break
       }
     }
@@ -64,7 +61,7 @@ class Log {
     if (this.level === 'long' || this.level === 'short') {
       message = message.replace(/(.*)#avoidBlack(.*)#/g, (message, string, who) => string + (avoidBlack ? chalk.gray(who) : chalk.black(who)))
     }
-    return `${getIcon(this.level)} ${chalk[avoidBlack ? 'gray' : 'black'](format(this.date, 'DD-MMM-YY HH:mm:ss'))} ${chalk.white(message)}`
+    return `${getIcon(this.level)} ${chalk[avoidBlack ? 'gray' : 'black'](format(this.date, 'dd-MMM-yy HH:mm:ss'))} ${chalk.white(message)}`
   }
 }
 

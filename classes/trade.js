@@ -41,11 +41,11 @@ class Trade {
   }
 
   static initialize ({ advisorId, buy, chartId, exchangeInfo, id, isLong, log, quantity, sell, show, signal, strategy, stream, symbol, updateFunds, who }) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         const info = exchangeInfo.symbols.find((info) => info.symbol === symbol && typeof info.status === 'string')
         if (!info) {
-          throw new Error(`Info not available`)
+          throw new Error('Info not available')
         }
         if (info.status !== 'TRADING') {
           throw new Error(`Not trading, current status: ${info.status}`)
@@ -93,7 +93,7 @@ class Trade {
   }
 
   close (type) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         if (!this.isOpen) {
           return resolve()
@@ -108,7 +108,7 @@ class Trade {
           this.timer.unsubscribe()
         }
         if (!this.info) {
-          throw new Error(`Info not available`)
+          throw new Error('Info not available')
         }
         if (this.info.status !== 'TRADING') {
           throw new Error(`Not trading, current status: ${this.info.status}`)
@@ -223,7 +223,7 @@ class Trade {
       }
     }
     const timeRemaining = this.timeToLive ? new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date() : 0
-    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'DD-MMM-YY HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : (this.isOpen && timeRemaining > 0 ? ' ' + chalk.blue(millisecondsToTime(timeRemaining)) : '')}`
+    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'dd-MMM-yy HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : (this.isOpen && timeRemaining > 0 ? ' ' + chalk.blue(millisecondsToTime(timeRemaining)) : '')}`
   }
 
   updateInfo (exchangeInfo) {

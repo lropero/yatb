@@ -1,13 +1,12 @@
-# CryptoBot
+# Yet Another Trading Bot
 *Potatoes and black holes*
 
 ### Requires
-- Node v10.15.1
-- Yarn v1.13.0
+- Node v12.13.0
 
 ### Installation
 ```sh
-$ yarn
+$ npm install
 ```
 
 ### Configuration
@@ -17,7 +16,7 @@ $ yarn
 
 ### Usage
 ```sh
-$ yarn run start
+$ npm run start
 ```
 - "a" -> Next advisor
 - "c" -> Next chart
@@ -31,9 +30,3 @@ $ yarn run start
 - "v" -> Show trade details (from chart with trade)
 - "x" -> Previous chart
 - "z" -> Cycle charts with open trades
-
-### Upgrading dependencies
-```sh
-$ yarn run upgrade
-$ yarn run nuke
-```

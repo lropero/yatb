@@ -26,7 +26,7 @@ class Bot {
   }
 
   addAdvisor (advisorId) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       const advisorName = advisorId.charAt(0).toUpperCase() + advisorId.slice(1).toLowerCase()
       try {
         if (!fs.existsSync(`./advisors/${advisorId}.js`)) {
@@ -42,7 +42,7 @@ class Bot {
         }
         const chartConfigs = await Advisor.getChartConfigs(sights)
         from(chartConfigs).pipe(
-          concatMap((chartConfig) => new Promise(async (resolve, reject) => {
+          concatMap((chartConfig) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
             const chartId = hash(chartConfig)
             if (this.charts[chartId]) {
               this.log({ level: 'info', message: `${this.charts[chartId].name} already loaded, skipping` })
@@ -72,7 +72,7 @@ class Bot {
   }
 
   addProvider (providerId) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       const providerName = providerId.charAt(0).toUpperCase() + providerId.slice(1).toLowerCase()
       try {
         if (!fs.existsSync(`./providers/${providerId}/index.js`)) {
@@ -111,7 +111,7 @@ class Bot {
   }
 
   closeTrades () {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       const trades = this.trades.filter((trade) => trade.isOpen)
       try {
         await Promise.all(trades.map((trade) => trade.close('expire')))
@@ -126,7 +126,7 @@ class Bot {
     const advisor = this.advisors[advisorId]
     const chart = this.charts[chartId]
     const who = `${advisor.name}->${chart.name}->${strategy.name}`
-    return signals.map((signal) => this.limiter.schedule(() => new Promise(async (resolve, reject) => {
+    return signals.map((signal) => this.limiter.schedule(() => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       switch (signal) {
         case 'CLOSE LONG':
         case 'CLOSE SHORT': {
@@ -154,7 +154,7 @@ class Bot {
             if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
               const trade = await Trade.initialize({
                 advisorId,
-                buy: (quantity, info) => new Promise(async (resolve, reject) => {
+                buy: (quantity, info) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
                   try {
                     const order = await this.provider.buy(quantity, info)
                     return resolve(order)
@@ -181,7 +181,7 @@ class Bot {
                 strategy,
                 stream: chart.stream,
                 symbol: chart.config.symbol,
-                updateFunds: () => new Promise(async (resolve, reject) => {
+                updateFunds: () => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
                   try {
                     const funds = await this.updateFunds(true)
                     return resolve(funds)
@@ -389,7 +389,7 @@ class Bot {
         advisorIds = []
       }
       await forkJoin(from(advisorIds).pipe(
-        concatMap((advisorId, index) => new Promise(async (resolve, reject) => {
+        concatMap((advisorId, index) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
           try {
             if (typeof advisorId !== 'string' || !advisorId.length) {
               throw new Error(`Advisor #${index + 1} not properly configured`)
@@ -487,7 +487,7 @@ class Bot {
   }
 
   retrieveExchangeInfo () {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         const exchangeInfo = await this.provider.retrieveExchangeInfo()
         return resolve(exchangeInfo)
@@ -498,7 +498,7 @@ class Bot {
   }
 
   retrieveFunds (updatePrices = false) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         if (!this.prices || updatePrices) {
           this.prices = await this.provider.retrievePrices()
@@ -563,7 +563,7 @@ class Bot {
   }
 
   updateFunds (updatePrices = false) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         this.funds = await this.retrieveFunds(updatePrices)
         if (this.currentMode === 'f') {

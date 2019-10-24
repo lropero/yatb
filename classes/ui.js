@@ -5,7 +5,7 @@ const chalkAnimation = require('chalk-animation')
 const figures = require('figures')
 const sfx = require('sfx')
 const stripAnsi = require('strip-ansi')
-const { debounce } = require('rxjs/operators')
+const { debounceTime } = require('rxjs/operators')
 const { format } = require('date-fns')
 const { formatMoney } = require('accounting-js')
 const { fromEvent, timer } = require('rxjs')
@@ -59,7 +59,7 @@ class UI {
     this.appendLogger()
     this.appendDisplay()
     this.appendFooter(config.getEstimatedValue)
-    fromEvent(this.screen, 'resize').pipe(debounce(() => timer(10))).subscribe(() => {
+    fromEvent(this.screen, 'resize').pipe(debounceTime(10)).subscribe(() => {
       if (this.egg) this.egg.unsubscribe()
       this.drawLogger()
       config.handleResize()
@@ -255,7 +255,7 @@ class UI {
       case 1: {
         const candles = chart.candles.slice().reverse()
         const data = candles.reduce((data, candle) => {
-          const date = `${format(candle.time, 'DD-MMM h:mma')}${!candle.isFinal ? ' LIVE' : ''}`
+          const date = `${format(candle.time, 'dd-MMM h:mma')}${!candle.isFinal ? ' LIVE' : ''}`
           data.push(Object.keys(candle.indicators).length ? {
             time: date,
             close: candle.close,
@@ -273,7 +273,7 @@ class UI {
         const candles = chart.candles.slice().reverse()
         const data = candles.reduce((data, candle) => {
           const { time, isFinal, indicators, ...rest } = candle
-          const date = `${format(candle.time, 'DD-MMM h:mma')}${!isFinal ? ' LIVE' : ''}`
+          const date = `${format(candle.time, 'dd-MMM h:mma')}${!isFinal ? ' LIVE' : ''}`
           data.push(Object.keys(indicators).length ? {
             time: date,
             ...rest,

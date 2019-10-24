@@ -83,7 +83,7 @@ class Advisor {
   }
 
   analyze (candles, strategies, isFinal) {
-    return Object.keys(strategies).map((strategyId) => new Promise(async (resolve, reject) => {
+    return Object.keys(strategies).map((strategyId) => new Promise((resolve, reject) => {
       const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
       const strategyConfig = strategies[strategyId]
       try {
@@ -91,7 +91,7 @@ class Advisor {
           return reject(new Error(`Strategy ${strategyName} doesn't exist`))
         }
         const Strategy = require(`../strategies/${strategyId}`)
-        const signals = await Strategy.analyze(candles, isFinal, strategyConfig.params || [])
+        const signals = Strategy.analyze(candles, isFinal, strategyConfig.params || [])
         if (signals.length) {
           signals.sort()
           return resolve({

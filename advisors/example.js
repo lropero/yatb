@@ -4,7 +4,7 @@ module.exports = {
       symbol: 'BTCUSDT',
       timeframe: '1m',
       strategies: {
-        'vsa': {
+        vsa: {
           margin: '10%',
           params: [50, 25, 120, 10, 20, 0.7],
           profitTarget: '2%',
@@ -17,7 +17,7 @@ module.exports = {
       symbol: 'BTCUSDT',
       timeframe: '3m',
       strategies: {
-        'vsa': {
+        vsa: {
           margin: '10%',
           params: [50, 25, 60, 8, 16, 0.7],
           profitTarget: '2%',
@@ -30,14 +30,14 @@ module.exports = {
       symbol: 'BTCUSDT',
       timeframe: '5m',
       strategies: {
-        'tazv': {
+        tazv: {
           margin: '10%',
           params: [16],
           paramsIndicators: [30, 10],
           profitTarget: '1%',
           stopLoss: '1%'
         },
-        'vsa': {
+        vsa: {
           margin: '20%',
           params: [50, 25, 60, 8, 16, 0.7],
           profitTarget: '2%',
@@ -50,7 +50,7 @@ module.exports = {
       symbol: 'BTCUSDT',
       timeframe: '15m',
       strategies: {
-        'vsa': {
+        vsa: {
           margin: '30%',
           params: [50, 25, 32, 5, 10, 0.6],
           profitTarget: '3%',
@@ -63,7 +63,7 @@ module.exports = {
       symbol: 'BTCUSDT',
       timeframe: '1h',
       strategies: {
-        'vsa': {
+        vsa: {
           margin: '50%',
           params: [50, 25, 12, 3, 5, 0.6],
           profitTarget: '5%',
@@ -76,7 +76,7 @@ module.exports = {
       symbol: 'BTCUSDT',
       timeframe: '6h',
       strategies: {
-        'vsa': {
+        vsa: {
           margin: '50%',
           params: [50, 25, 10, 2, 4, 0.5],
           profitTarget: '5%',
@@ -89,7 +89,7 @@ module.exports = {
       symbol: 'BTCUSDT',
       timeframe: '1d',
       strategies: {
-        'vsa': {
+        vsa: {
           margin: '80%',
           params: [50, 25, 10, 2, 4, 0.5],
           profitTarget: '5%',
@@ -101,7 +101,7 @@ module.exports = {
       symbol: 'ETHBTC',
       timeframe: '5m',
       strategies: {
-        'vsa': {
+        vsa: {
           margin: '20%',
           params: [50, 25, 60, 8, 16, 0.7],
           profitTarget: '2%',

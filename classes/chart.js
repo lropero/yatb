@@ -1,6 +1,6 @@
 const hash = require('object-hash')
 const isOnline = require('is-online')
-const { addMilliseconds, distanceInWordsToNow } = require('date-fns')
+const { addMilliseconds, formatDistanceToNow } = require('date-fns')
 const { interval, timer } = require('rxjs')
 
 const { errorToString, timeframeToMilliseconds, withIndicators } = require('../helpers')
@@ -19,10 +19,10 @@ class Chart {
   }
 
   static initialize (chartId, chartConfig, { exchangeInfo, log, notifications, retrieveStream, show }) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       const info = exchangeInfo.symbols.find((info) => info.symbol === chartConfig.symbol && typeof info.status === 'string')
       if (!info) {
-        throw new Error(`Info not available`)
+        throw new Error('Info not available')
       }
       const chart = new Chart(chartId, chartConfig, info, log, notifications, retrieveStream, show)
       try {
@@ -135,10 +135,10 @@ class Chart {
   }
 
   start () {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         if (!this.info) {
-          throw new Error(`Info not available`)
+          throw new Error('Info not available')
         }
         const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
         const stream = await this.retrieveStream(this.config, tickSize)
@@ -150,7 +150,7 @@ class Chart {
         }
         const retryTime = 1000 * 60 * ++this.retries
         timer(retryTime).subscribe(() => this.restart())
-        error.message = `Chart ${this.name}: ${errorToString(error)}, retrying in ${distanceInWordsToNow(addMilliseconds(new Date(), retryTime))}`
+        error.message = `Chart ${this.name}: ${errorToString(error)}, retrying in ${formatDistanceToNow(addMilliseconds(new Date(), retryTime))}`
         return reject(error)
       }
     })
