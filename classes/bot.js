@@ -11,7 +11,7 @@ const Log = require('./log')
 const Trade = require('./trade')
 const UI = require('./ui')
 const { calculateFunds, errorToString } = require('../helpers')
-const { description, version } = require('../package.json')
+const { name, version } = require('../package.json')
 
 class Bot {
   constructor (config) {
@@ -431,7 +431,7 @@ class Bot {
           delete this.readMore
           this.show()
         },
-        title: `${description} v${version}`
+        title: `${name} v${version}`
       })
       this.show()
       interval(1000).subscribe(() => {
