@@ -18,7 +18,7 @@
     "figures": "^3.1.0",
     "is-online": "^8.2.0",
     "js-object-pretty-print": "^0.3.0",
-    "node-binance-api": "^0.9.7",
+    "node-binance-api": "^0.9.8",
     "object-hash": "^2.0.0",
     "rxjs": "^6.5.3",
     "sfx": "^0.1.1",
