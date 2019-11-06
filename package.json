@@ -27,13 +27,12 @@
     "write": "^2.0.0"
   },
   "devDependencies": {
-    "node-gyp": "^6.0.0"
+    "node-gyp": "^6.0.1"
   },
   "scripts": {
-    "clean": "rm -f ./package-lock.lock && rm -f ./npm-*.log && npm cache verify",
-    "init": "rm -rf ./node_modules && npm install",
+    "clean": "rm -f ./npm-*.log && rm -f ./package-lock.json && rm -rf ./node_modules && npm cache verify",
     "lint": "npx standard --fix",
-    "nuke": "npm run clean && npm run init",
+    "nuke": "npm run clean && npm install",
     "start": "node index.js",
     "upgrade": "npx upgradeps -n"
   }
