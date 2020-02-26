@@ -1,23 +1,30 @@
 # Yet Another Trading Bot
-*Potatoes and black holes*
+
+_Potatoes and black holes_
 
 ### Requires
-- Node v12.13.0
+
+- Node v13.9.0
+- Yarn v1.22.0
 
 ### Installation
+
 ```sh
-$ npm install
+$ yarn
 ```
 
 ### Configuration
+
 - Add Binance keys to `providers/binance/config.js`
 - Create your advisor file(s) in `advisors/` folder
 - Set desired advisors in `config.js`
 
 ### Usage
+
 ```sh
-$ npm run start
+$ yarn run start
 ```
+
 - "a" -> Next advisor
 - "c" -> Next chart
 - "d" -> Show chart data
