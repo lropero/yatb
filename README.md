@@ -4,8 +4,8 @@ _Potatoes and black holes_
 
 ### Requires
 
-- Node v13.9.0
-- Yarn v1.22.0
+- Node v13.12.0
+- Yarn v1.22.4
 
 ### Installation
 
