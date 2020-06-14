@@ -59,13 +59,15 @@ class UI {
     this.appendLogger()
     this.appendDisplay()
     this.appendFooter(config.getEstimatedValue)
-    fromEvent(this.screen, 'resize').pipe(debounceTime(10)).subscribe(() => {
-      if (this.egg) this.egg.unsubscribe()
-      this.drawLogger()
-      config.handleResize()
-    })
+    fromEvent(this.screen, 'resize')
+      .pipe(debounceTime(10))
+      .subscribe(() => {
+        if (this.egg) this.egg.unsubscribe()
+        this.drawLogger()
+        config.handleResize()
+      })
     this.screen.render()
-    Object.keys(config.bindings).map((key) => this.screen.key(key, config.bindings[key]))
+    Object.keys(config.bindings).map(key => this.screen.key(key, config.bindings[key]))
   }
 
   appendDisplay () {
@@ -132,7 +134,7 @@ class UI {
   }
 
   drawLogger () {
-    this.logger.setContent(this.logs.map((log) => ` ${log}`).join('\n'))
+    this.logger.setContent(this.logs.map(log => ` ${log}`).join('\n'))
     this.logger.scrollTo(this.bufferLength)
     this.screen.render()
   }
@@ -148,7 +150,7 @@ class UI {
   renderChart (advisor, chart, trade) {
     if (this.egg) this.egg.unsubscribe()
     const { close: quote, direction = '' } = chart.candles[chart.candles.length - 1]
-    const { tickSize } = chart.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
+    const { tickSize } = chart.info.filters.find(filter => filter.filterType === 'PRICE_FILTER')
     const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
     const candles = chart.candles.slice(Math.max(chart.candles.length - this.screen.cols + quote.toString().split('.')[0].length + decimalPlaces + 3, 0))
     let quoteColor = colors.CHART_PRICE_NEW_CANDLE
@@ -170,10 +172,15 @@ class UI {
     }
     let chartLength = 0
     const hasVolume = Math.ceil(this.screen.rows * 0.8) - 2 > 4
-    const ascii = stripAnsi(asciichart.plot(candles.map((candle) => candle.close), {
-      format: (close) => close.toFixed(decimalPlaces),
-      height: hasVolume ? Math.ceil(this.screen.rows * 0.6) - 2 : Math.ceil(this.screen.rows * 0.8) - 2
-    })).split('\n')
+    const ascii = stripAnsi(
+      asciichart.plot(
+        candles.map(candle => candle.close),
+        {
+          format: close => close.toFixed(decimalPlaces),
+          height: hasVolume ? Math.ceil(this.screen.rows * 0.6) - 2 : Math.ceil(this.screen.rows * 0.8) - 2
+        }
+      )
+    ).split('\n')
     const tradeNumbers = {}
     if (trade) {
       const prices = ascii.reduce((prices, line) => {
@@ -185,7 +192,7 @@ class UI {
       }, [])
       if (prices.length > 1) {
         const distance = prices[0] - prices[1]
-        const distancesPrice = prices.map((price) => Math.abs(price - trade.price))
+        const distancesPrice = prices.map(price => Math.abs(price - trade.price))
         const indexPrice = distancesPrice.indexOf(Math.min(...distancesPrice))
         if (indexPrice === 0 && Math.abs(prices[0] - trade.price) < distance) {
           tradeNumbers[indexPrice] = { tradePrice: chalk[colors.TRADE_PRICE](trade.price.toFixed(decimalPlaces)) }
@@ -194,7 +201,7 @@ class UI {
         } else if (indexPrice !== 0 && indexPrice !== prices.length - 1) {
           tradeNumbers[indexPrice] = { tradePrice: chalk[colors.TRADE_PRICE](trade.price.toFixed(decimalPlaces)) }
         }
-        const distancesStopPrice = prices.map((price) => Math.abs(price - trade.stopPrice))
+        const distancesStopPrice = prices.map(price => Math.abs(price - trade.stopPrice))
         const indexStopPrice = distancesStopPrice.indexOf(Math.min(...distancesStopPrice))
         if (indexStopPrice === 0 && Math.abs(prices[0] - trade.stopPrice) < distance) {
           tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
@@ -203,7 +210,7 @@ class UI {
         } else if (indexStopPrice !== 0 && indexStopPrice !== prices.length - 1) {
           tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
         }
-        const distancesTargetPrice = prices.map((price) => Math.abs(price - trade.targetPrice))
+        const distancesTargetPrice = prices.map(price => Math.abs(price - trade.targetPrice))
         const indexTargetPrice = distancesTargetPrice.indexOf(Math.min(...distancesTargetPrice))
         if (indexTargetPrice === 0 && Math.abs(prices[0] - trade.targetPrice) < distance) {
           tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
@@ -214,29 +221,36 @@ class UI {
         }
       }
     }
-    const asciiStyled = ascii.reduce((asciiStyled, line, index) => {
-      const split = line.split(line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532))
-      if (split.length === 2) {
-        const price = split[0].trim()
-        let drawing = chalk[colors.CHART_DRAWING](split[1].slice(0, -1))
-        const isQuote = String.fromCharCode(9472, 9581, 9584).includes(stripAnsi(drawing).slice(-1))
-        if (!asciiStyled.length) {
-          chartLength = stripAnsi(drawing).length
-          const title = chalk[colors.CHART_TITLE](`${advisor.name} - ${chart.name}`) + (trade ? ' ' + trade.toString(false, false) : '')
-          if (chartLength > stripAnsi(title).length) {
-            drawing = `${title} ${chalk[colors.CHART_DRAWING](stripAnsi(drawing).slice(stripAnsi(title).length + 1))}`
+    const asciiStyled = ascii
+      .reduce((asciiStyled, line, index) => {
+        const split = line.split(line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532))
+        if (split.length === 2) {
+          const price = split[0].trim()
+          let drawing = chalk[colors.CHART_DRAWING](split[1].slice(0, -1))
+          const isQuote = String.fromCharCode(9472, 9581, 9584).includes(stripAnsi(drawing).slice(-1))
+          if (!asciiStyled.length) {
+            chartLength = stripAnsi(drawing).length
+            const title = chalk[colors.CHART_TITLE](`${advisor.name} - ${chart.name}`) + (trade ? ' ' + trade.toString(false, false) : '')
+            if (chartLength > stripAnsi(title).length) {
+              drawing = `${title} ${chalk[colors.CHART_DRAWING](stripAnsi(drawing).slice(stripAnsi(title).length + 1))}`
+            }
           }
+          asciiStyled.push(`${drawing}${chalk[colors.CHART_BORDER](String.fromCharCode(9474))}${trade && tradeNumbers[index] && tradeNumbers[index].tradePrice ? (trade.isLong ? chalk[colors.TRADE_LONG](figures.arrowUp) : chalk[colors.TRADE_SHORT](figures.arrowDown)) : ' '}${isQuote ? chalk[quoteColor](quote.toFixed(decimalPlaces)) : (tradeNumbers[index] && tradeNumbers[index].tradePrice) || tradeNumbers[index] || chalk[colors.CHART_PRICE](price)}`)
+          return asciiStyled
         }
-        asciiStyled.push(`${drawing}${chalk[colors.CHART_BORDER](String.fromCharCode(9474))}${trade && tradeNumbers[index] && tradeNumbers[index].tradePrice ? (trade.isLong ? chalk[colors.TRADE_LONG](figures.arrowUp) : chalk[colors.TRADE_SHORT](figures.arrowDown)) : ' '}${isQuote ? chalk[quoteColor](quote.toFixed(decimalPlaces)) : ((tradeNumbers[index] && tradeNumbers[index].tradePrice) || tradeNumbers[index] || chalk[colors.CHART_PRICE](price))}`)
-        return asciiStyled
-      }
-    }, []).join('\n')
+      }, [])
+      .join('\n')
     if (hasVolume) {
-      this.display.setContent([asciiStyled, plotVolume(candles.slice(1), {
-        colors,
-        height: Math.ceil(this.screen.rows * 0.8) - ascii.length - 1,
-        width: this.screen.cols
-      })].join('\n'))
+      this.display.setContent(
+        [
+          asciiStyled,
+          plotVolume(candles.slice(1), {
+            colors,
+            height: Math.ceil(this.screen.rows * 0.8) - ascii.length - 1,
+            width: this.screen.cols
+          })
+        ].join('\n')
+      )
     } else {
       this.display.setContent(asciiStyled)
     }
@@ -256,14 +270,18 @@ class UI {
         const candles = chart.candles.slice().reverse()
         const data = candles.reduce((data, candle) => {
           const date = `${format(candle.time, 'dd-MMM h:mma')}${!candle.isFinal ? ' LIVE' : ''}`
-          data.push(Object.keys(candle.indicators).length ? {
-            time: date,
-            close: candle.close,
-            indicators: candle.indicators
-          } : {
-            time: date,
-            close: candle.close
-          })
+          data.push(
+            Object.keys(candle.indicators).length
+              ? {
+                  time: date,
+                  close: candle.close,
+                  indicators: candle.indicators
+                }
+              : {
+                  time: date,
+                  close: candle.close
+                }
+          )
           return data
         }, [])
         this.display.setContent(pretty(data, 2))
@@ -274,14 +292,18 @@ class UI {
         const data = candles.reduce((data, candle) => {
           const { time, isFinal, indicators, ...rest } = candle
           const date = `${format(candle.time, 'dd-MMM h:mma')}${!isFinal ? ' LIVE' : ''}`
-          data.push(Object.keys(indicators).length ? {
-            time: date,
-            ...rest,
-            indicators
-          } : {
-            time: date,
-            ...rest
-          })
+          data.push(
+            Object.keys(indicators).length
+              ? {
+                  time: date,
+                  ...rest,
+                  indicators
+                }
+              : {
+                  time: date,
+                  ...rest
+                }
+          )
           return data
         }, [])
         this.display.setContent(pretty(data, 2))
@@ -320,7 +342,13 @@ class UI {
         }
         return estimatedValue
       }, 0)
-      this.display.setContent(`${chalk[colors.FUNDS_TITLE](`Estimated value: ${formatMoney(estimatedValue, { precision: 3 })}`)}\n` + Object.keys(funds).sort().map((asset) => `${chalk[colors.FUNDS_ASSET](asset)} ${chalk[colors.FUNDS_AVAILABLE](funds[asset].available)}${funds[asset].onOrder > 0 ? ' ' + chalk[colors.FUNDS_ORDER](funds[asset].onOrder) : ''}${funds[asset].dollars > 0 ? ' ' + chalk[colors.FUNDS_DOLLARS](formatMoney(funds[asset].dollars, { precision: 3 })) : ''}`).join('\n'))
+      this.display.setContent(
+        `${chalk[colors.FUNDS_TITLE](`Estimated value: ${formatMoney(estimatedValue, { precision: 3 })}`)}\n` +
+          Object.keys(funds)
+            .sort()
+            .map(asset => `${chalk[colors.FUNDS_ASSET](asset)} ${chalk[colors.FUNDS_AVAILABLE](funds[asset].available)}${funds[asset].onOrder > 0 ? ' ' + chalk[colors.FUNDS_ORDER](funds[asset].onOrder) : ''}${funds[asset].dollars > 0 ? ' ' + chalk[colors.FUNDS_DOLLARS](formatMoney(funds[asset].dollars, { precision: 3 })) : ''}`)
+            .join('\n')
+      )
       this.screen.render()
     }
   }
@@ -328,7 +356,7 @@ class UI {
   renderLogs (logs) {
     if (logs.length) {
       if (this.egg) this.egg.unsubscribe()
-      this.display.setContent(logs.map((log) => log.toString(true)).join('\n'))
+      this.display.setContent(logs.map(log => log.toString(true)).join('\n'))
       this.screen.render()
     }
   }
@@ -344,10 +372,19 @@ class UI {
       if (this.egg) this.egg.unsubscribe()
       const { advisorId, buy, chartId, info, log, sell, show, updateFunds, stop, target, timer, ...rest } = trade
       const timeRemaining = trade.timeToLive ? new Date(trade.orders[0].date.getTime() + trade.timeToLive) - new Date() : 0
-      this.display.setContent(chalk[trade.isOpen ? 'yellow' : 'gray'](pretty(timeRemaining > 0 ? {
-        ...rest,
-        timeRemaining: millisecondsToTime(timeRemaining)
-      } : rest, 2)))
+      this.display.setContent(
+        chalk[trade.isOpen ? 'yellow' : 'gray'](
+          pretty(
+            timeRemaining > 0
+              ? {
+                  ...rest,
+                  timeRemaining: millisecondsToTime(timeRemaining)
+                }
+              : rest,
+            2
+          )
+        )
+      )
       this.screen.render()
     }
   }
@@ -355,7 +392,7 @@ class UI {
   renderTrades (trades) {
     if (trades.length) {
       if (this.egg) this.egg.unsubscribe()
-      this.display.setContent(trades.map((trade) => trade.toString()).join('\n'))
+      this.display.setContent(trades.map(trade => trade.toString()).join('\n'))
       this.screen.render()
     }
   }

@@ -36,7 +36,7 @@ class Advisor {
             const margin = parseFloat(strategyConfig.margin || 0)
             const profitTarget = parseFloat(strategyConfig.profitTarget || 0)
             const stopLoss = parseFloat(strategyConfig.stopLoss || 0)
-            if ((!(margin > 0) || margin > 100) || !(profitTarget > 0) || (!(stopLoss > 0) || stopLoss > 100)) {
+            if (!(margin > 0) || margin > 100 || !(profitTarget > 0) || !(stopLoss > 0) || stopLoss > 100) {
               return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName} not properly configured`))
             }
             if (!fs.existsSync(`./strategies/${strategyId}/index.js`)) {
@@ -83,31 +83,34 @@ class Advisor {
   }
 
   analyze (candles, strategies, isFinal) {
-    return Object.keys(strategies).map((strategyId) => new Promise((resolve, reject) => {
-      const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
-      const strategyConfig = strategies[strategyId]
-      try {
-        if (!fs.existsSync(`./strategies/${strategyId}/index.js`)) {
-          return reject(new Error(`Strategy ${strategyName} doesn't exist`))
-        }
-        const Strategy = require(`../strategies/${strategyId}`)
-        const signals = Strategy.analyze(candles, isFinal, strategyConfig.params || [])
-        if (signals.length) {
-          signals.sort()
-          return resolve({
-            signals: signals.filter((value, index, self) => self.indexOf(value) === index),
-            strategy: {
-              config: strategyConfig,
-              name: strategyName
+    return Object.keys(strategies).map(
+      strategyId =>
+        new Promise((resolve, reject) => {
+          const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
+          const strategyConfig = strategies[strategyId]
+          try {
+            if (!fs.existsSync(`./strategies/${strategyId}/index.js`)) {
+              return reject(new Error(`Strategy ${strategyName} doesn't exist`))
             }
-          })
-        }
-        return resolve()
-      } catch (error) {
-        error.message = `Strategy ${strategyName}: ${errorToString(error)}`
-        return reject(error)
-      }
-    }))
+            const Strategy = require(`../strategies/${strategyId}`)
+            const signals = Strategy.analyze(candles, isFinal, strategyConfig.params || [])
+            if (signals.length) {
+              signals.sort()
+              return resolve({
+                signals: signals.filter((value, index, self) => self.indexOf(value) === index),
+                strategy: {
+                  config: strategyConfig,
+                  name: strategyName
+                }
+              })
+            }
+            return resolve()
+          } catch (error) {
+            error.message = `Strategy ${strategyName}: ${errorToString(error)}`
+            return reject(error)
+          }
+        })
+    )
   }
 }
 

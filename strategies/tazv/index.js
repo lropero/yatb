@@ -14,28 +14,42 @@ class Strategy {
       if (candles.length < 2 || candles.length < params[0]) {
         return resolve(signals)
       }
-      const { indicators: { fast, slow } } = candles[0]
-      const { indicators: { fast: prevFast, slow: prevSlow } } = candles[1]
-      if (slow.sma > fast.ema) { // Market is trending up
-        if (isFinal) { // Last candle is final
-          if (candles[0].close > fast.ema && candles[0].close < slow.sma) { // Price is in the zone
-            if (candles[0].volume === Math.max(...(candles.slice(0, params[0]).map((candle) => candle.volume)))) { // Volume larger than previous candles
+      const {
+        indicators: { fast, slow }
+      } = candles[0]
+      const {
+        indicators: { fast: prevFast, slow: prevSlow }
+      } = candles[1]
+      if (slow.sma > fast.ema) {
+        // Market is trending up
+        if (isFinal) {
+          // Last candle is final
+          if (candles[0].close > fast.ema && candles[0].close < slow.sma) {
+            // Price is in the zone
+            if (candles[0].volume === Math.max(...candles.slice(0, params[0]).map(candle => candle.volume))) {
+              // Volume larger than previous candles
               signals.push('LONG')
             }
           }
         }
-      } else if (prevSlow.sma > prevFast.ema) { // Market stopped trending up
+      } else if (prevSlow.sma > prevFast.ema) {
+        // Market stopped trending up
         signals.push('CLOSE LONG')
       }
-      if (slow.sma < fast.ema) { // Market is trending down
-        if (isFinal) { // Last candle is final
-          if (candles[0].close < fast.ema && candles[0].close > slow.sma) { // Price is in the zone
-            if (candles[0].volume === Math.max(...(candles.slice(0, params[0]).map((candle) => candle.volume)))) { // Volume larger than previous candles
+      if (slow.sma < fast.ema) {
+        // Market is trending down
+        if (isFinal) {
+          // Last candle is final
+          if (candles[0].close < fast.ema && candles[0].close > slow.sma) {
+            // Price is in the zone
+            if (candles[0].volume === Math.max(...candles.slice(0, params[0]).map(candle => candle.volume))) {
+              // Volume larger than previous candles
               signals.push('SHORT')
             }
           }
         }
-      } else if (prevSlow.sma < prevFast.ema) { // Market stopped trending down
+      } else if (prevSlow.sma < prevFast.ema) {
+        // Market stopped trending down
         signals.push('CLOSE SHORT')
       }
       return resolve(signals)

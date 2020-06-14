@@ -9,7 +9,7 @@ const { errorToString, millisecondsToTime, timeframeToMilliseconds } = require('
 
 class Trade {
   constructor (advisorId, buy, chartId, id, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who) {
-    const { tickSize } = info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
+    const { tickSize } = info.filters.find(filter => filter.filterType === 'PRICE_FILTER')
     const spent = order.fills.reduce((spent, fill) => spent + parseFloat(fill.qty) * parseFloat(fill.price), 0)
     this.advisorId = advisorId
     this.buy = buy
@@ -20,10 +20,12 @@ class Trade {
     this.isLong = isLong
     this.isOpen = true
     this.log = log
-    this.orders = [{
-      date: new Date(),
-      ...order
-    }]
+    this.orders = [
+      {
+        date: new Date(),
+        ...order
+      }
+    ]
     this.price = parseFloat((order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length).toFixed(this.decimalPlaces))
     this.profitTarget = parseFloat(strategy.config.profitTarget || 0) / 100
     this.quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
@@ -41,9 +43,10 @@ class Trade {
   }
 
   static initialize ({ advisorId, buy, chartId, exchangeInfo, id, isLong, log, quantity, sell, show, signal, strategy, stream, symbol, updateFunds, who }) {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
       try {
-        const info = exchangeInfo.symbols.find((info) => info.symbol === symbol && typeof info.status === 'string')
+        const info = exchangeInfo.symbols.find(info => info.symbol === symbol && typeof info.status === 'string')
         if (!info) {
           throw new Error('Info not available')
         }
@@ -70,7 +73,7 @@ class Trade {
       let commission = 0
       let loss = 0
       let profit = 0
-      this.orders.map((order) => {
+      this.orders.map(order => {
         if (order.side === 'BUY') {
           loss += order.fills.reduce((loss, fill) => loss + parseFloat(fill.qty) * parseFloat(fill.price), 0)
         } else if (order.side === 'SELL') {
@@ -93,7 +96,8 @@ class Trade {
   }
 
   close (type) {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
       try {
         if (!this.isOpen) {
           return resolve()
@@ -142,46 +146,50 @@ class Trade {
     if (this.stop) {
       this.stop.unsubscribe()
     }
-    this.stop = stream.pipe(
-      filter((candle) => {
-        if (this.isLong) {
-          return candle.low <= this.stopPrice
-        } else {
-          return candle.high >= this.stopPrice
-        }
-      }),
-      first(),
-      tap(async () => {
-        try {
-          await this.close('stop')
-        } catch (error) {
-          this.log(error)
-        }
-      })
-    ).subscribe()
+    this.stop = stream
+      .pipe(
+        filter(candle => {
+          if (this.isLong) {
+            return candle.low <= this.stopPrice
+          } else {
+            return candle.high >= this.stopPrice
+          }
+        }),
+        first(),
+        tap(async () => {
+          try {
+            await this.close('stop')
+          } catch (error) {
+            this.log(error)
+          }
+        })
+      )
+      .subscribe()
   }
 
   setTarget (stream) {
     if (this.target) {
       this.target.unsubscribe()
     }
-    this.target = stream.pipe(
-      filter((candle) => {
-        if (this.isLong) {
-          return candle.high >= this.targetPrice
-        } else {
-          return candle.low <= this.targetPrice
-        }
-      }),
-      first(),
-      tap(async () => {
-        try {
-          await this.close('target')
-        } catch (error) {
-          this.log(error)
-        }
-      })
-    ).subscribe()
+    this.target = stream
+      .pipe(
+        filter(candle => {
+          if (this.isLong) {
+            return candle.high >= this.targetPrice
+          } else {
+            return candle.low <= this.targetPrice
+          }
+        }),
+        first(),
+        tap(async () => {
+          try {
+            await this.close('target')
+          } catch (error) {
+            this.log(error)
+          }
+        })
+      )
+      .subscribe()
   }
 
   subscribe (stream) {
@@ -214,20 +222,25 @@ class Trade {
         return this.isLong ? chalk.cyan(figures.arrowUp) : chalk.magenta(figures.arrowDown)
       } else {
         switch (this.closeType) {
-          case 'expire': return chalk.blue(figures.play)
-          case 'signal': return chalk.yellow(figures.play)
-          case 'stop': return chalk.red(figures.play)
-          case 'target': return chalk.green(figures.play)
-          default: return chalk.gray(figures.play)
+          case 'expire':
+            return chalk.blue(figures.play)
+          case 'signal':
+            return chalk.yellow(figures.play)
+          case 'stop':
+            return chalk.red(figures.play)
+          case 'target':
+            return chalk.green(figures.play)
+          default:
+            return chalk.gray(figures.play)
         }
       }
     }
     const timeRemaining = this.timeToLive ? new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date() : 0
-    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'dd-MMM-yy HH:mm:ss'))} ${(this.isOpen ? chalk.white(string) : chalk.gray(string))} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : (this.isOpen && timeRemaining > 0 ? ' ' + chalk.blue(millisecondsToTime(timeRemaining)) : '')}`
+    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'dd-MMM-yy HH:mm:ss'))} ${this.isOpen ? chalk.white(string) : chalk.gray(string)} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : this.isOpen && timeRemaining > 0 ? ' ' + chalk.blue(millisecondsToTime(timeRemaining)) : ''}`
   }
 
   updateInfo (exchangeInfo) {
-    const info = exchangeInfo.symbols.find((info) => info.symbol === this.info.symbol)
+    const info = exchangeInfo.symbols.find(info => info.symbol === this.info.symbol)
     if (info) {
       this.info = info
     }

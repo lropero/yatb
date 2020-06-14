@@ -1,6 +1,6 @@
 const tulind = require('tulind') // https://tulipindicators.org/list
 
-const { errorToString } = require('.')
+const errorToString = require('./errorToString')
 
 function filterIndicators (object, index) {
   if (Array.isArray(object)) {
@@ -20,25 +20,22 @@ function withIndicators (candles, configIndicators) {
       }
       const allowedInputs = Object.keys(candles[0])
       const indicators = {}
-      Object.keys(configIndicators).map((indicatorName) => {
+      Object.keys(configIndicators).map(indicatorName => {
         const configIndicator = configIndicators[indicatorName]
         const indicator = tulind.indicators[configIndicator.type]
         if (!indicator) {
           return reject(new Error(`Indicator ${configIndicator.type} doesn't exist`))
         }
         const indicatorInputs = []
-        indicator.input_names.map((inputName) => {
+        indicator.input_names.map(inputName => {
           if (!allowedInputs.includes(inputName) && !allowedInputs.includes(configIndicator.inputs[inputName])) {
-            return reject(new Error(!Object.keys(configIndicator.inputs).includes(inputName)
-              ? `Missing input '${inputName}' for indicator ${indicatorName}`
-              : `Allowed values for input ${indicatorName}->${inputName}: ${allowedInputs.join(', ')}`
-            ))
+            return reject(new Error(!Object.keys(configIndicator.inputs).includes(inputName) ? `Missing input '${inputName}' for indicator ${indicatorName}` : `Allowed values for input ${indicatorName}->${inputName}: ${allowedInputs.join(', ')}`))
           }
           const input = allowedInputs.includes(inputName) ? inputName : configIndicator.inputs[inputName]
-          indicatorInputs.push(candles.map((candle) => candle[input]))
+          indicatorInputs.push(candles.map(candle => candle[input]))
         })
         const indicatorOptions = []
-        indicator.option_names.map((optionName) => {
+        indicator.option_names.map(optionName => {
           if (!Object.keys(configIndicator.options).includes(optionName)) {
             return reject(new Error(`Missing option '${optionName}' for indicator ${indicatorName}`))
           }
@@ -50,7 +47,7 @@ function withIndicators (candles, configIndicators) {
           }
           indicators[indicatorName] = {}
           indicator.output_names.map((outputName, index) => {
-            indicators[indicatorName][outputName] = (new Array(candles.length - results[index].length)).concat(results[index])
+            indicators[indicatorName][outputName] = new Array(candles.length - results[index].length).concat(results[index])
           })
         })
       })

@@ -10,8 +10,12 @@ class Strategy {
       if (candles.length < 2) {
         return resolve(signals)
       }
-      const { indicators: { bands } } = candles[0]
-      const { indicators: { bands: prevBands } } = candles[1]
+      const {
+        indicators: { bands }
+      } = candles[0]
+      const {
+        indicators: { bands: prevBands }
+      } = candles[1]
       if (candles[0].close < bands.bbands_lower && candles[1].close > prevBands.bbands_lower) {
         signals.push('CLOSE SHORT')
         if (isFinal) {

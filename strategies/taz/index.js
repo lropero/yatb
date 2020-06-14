@@ -11,28 +11,42 @@ class Strategy {
       if (candles.length < 2) {
         return resolve(signals)
       }
-      const { indicators: { fast, slow } } = candles[0]
-      const { indicators: { fast: prevFast, slow: prevSlow } } = candles[1]
-      if (slow.sma > fast.ema) { // Market is trending up
-        if (isFinal) { // Last candle is final
-          if (candles[0].close > fast.ema && candles[0].close < slow.sma) { // Price is in the zone
-            if (candles[1].close > prevSlow.sma) { // Previous price wasn't
+      const {
+        indicators: { fast, slow }
+      } = candles[0]
+      const {
+        indicators: { fast: prevFast, slow: prevSlow }
+      } = candles[1]
+      if (slow.sma > fast.ema) {
+        // Market is trending up
+        if (isFinal) {
+          // Last candle is final
+          if (candles[0].close > fast.ema && candles[0].close < slow.sma) {
+            // Price is in the zone
+            if (candles[1].close > prevSlow.sma) {
+              // Previous price wasn't
               signals.push('LONG')
             }
           }
         }
-      } else if (prevSlow.sma > prevFast.ema) { // Market stopped trending up
+      } else if (prevSlow.sma > prevFast.ema) {
+        // Market stopped trending up
         signals.push('CLOSE LONG')
       }
-      if (slow.sma < fast.ema) { // Market is trending down
-        if (isFinal) { // Last candle is final
-          if (candles[0].close < fast.ema && candles[0].close > slow.sma) { // Price is in the zone
-            if (candles[1].close < prevSlow.sma) { // Previous price wasn't
+      if (slow.sma < fast.ema) {
+        // Market is trending down
+        if (isFinal) {
+          // Last candle is final
+          if (candles[0].close < fast.ema && candles[0].close > slow.sma) {
+            // Price is in the zone
+            if (candles[1].close < prevSlow.sma) {
+              // Previous price wasn't
               signals.push('SHORT')
             }
           }
         }
-      } else if (prevSlow.sma < prevFast.ema) { // Market stopped trending down
+      } else if (prevSlow.sma < prevFast.ema) {
+        // Market stopped trending down
         signals.push('CLOSE SHORT')
       }
       return resolve(signals)

@@ -1,6 +1,6 @@
 function calculateFunds (balances, prices) {
   const fundsWithoutDollars = Object.keys(balances)
-    .filter((asset) => parseFloat(balances[asset].available) > 0 || parseFloat(balances[asset].onOrder) > 0)
+    .filter(asset => parseFloat(balances[asset].available) > 0 || parseFloat(balances[asset].onOrder) > 0)
     .sort()
     .reduce((funds, asset) => {
       funds[asset] = {

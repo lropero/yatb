@@ -1,9 +1,9 @@
 const chalk = require('chalk')
 
 function plotVolume (candles, { colors, height, width }) {
-  const volumes = candles.map((candle) => candle.volume)
+  const volumes = candles.map(candle => candle.volume)
   const highestVolume = Math.max(...volumes)
-  const heights = volumes.map((volume) => Math.round((volume * height / highestVolume) * 2) / 2)
+  const heights = volumes.map(volume => Math.round(((volume * height) / highestVolume) * 2) / 2)
   const output = []
   for (let i = 0; i < height; i++) {
     const line = []

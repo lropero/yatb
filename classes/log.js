@@ -42,19 +42,30 @@ class Log {
   }
 
   toString (avoidBlack = false) {
-    const getIcon = (level) => {
+    const getIcon = level => {
       switch (level) {
-        case 'closeExpire': return chalk.blue(figures.play)
-        case 'closeSignal': return chalk.yellow(figures.play)
-        case 'closeStop': return chalk.red(figures.play)
-        case 'closeTarget': return chalk.green(figures.play)
-        case 'error': return chalk.red(figures.bullet)
-        case 'info': return chalk.white(figures.bullet)
-        case 'long': return chalk.cyan(figures.arrowUp)
-        case 'short': return chalk.magenta(figures.arrowDown)
-        case 'silent': return chalk.gray(figures.bullet)
-        case 'success': return chalk.green(figures.bullet)
-        case 'warning': return chalk.yellow(figures.bullet)
+        case 'closeExpire':
+          return chalk.blue(figures.play)
+        case 'closeSignal':
+          return chalk.yellow(figures.play)
+        case 'closeStop':
+          return chalk.red(figures.play)
+        case 'closeTarget':
+          return chalk.green(figures.play)
+        case 'error':
+          return chalk.red(figures.bullet)
+        case 'info':
+          return chalk.white(figures.bullet)
+        case 'long':
+          return chalk.cyan(figures.arrowUp)
+        case 'short':
+          return chalk.magenta(figures.arrowDown)
+        case 'silent':
+          return chalk.gray(figures.bullet)
+        case 'success':
+          return chalk.green(figures.bullet)
+        case 'warning':
+          return chalk.yellow(figures.bullet)
       }
     }
     let message = this.message

@@ -1,5 +1,4 @@
 const Bottleneck = require('bottleneck')
-const chalk = require('chalk')
 const fs = require('fs')
 const hash = require('object-hash')
 const { concatMap, toArray } = require('rxjs/operators')
@@ -26,7 +25,8 @@ class Bot {
   }
 
   addAdvisor (advisorId) {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
       const advisorName = advisorId.charAt(0).toUpperCase() + advisorId.slice(1).toLowerCase()
       try {
         if (!fs.existsSync(`./advisors/${advisorId}.js`)) {
@@ -41,29 +41,35 @@ class Bot {
           return reject(new Error(`Advisor ${advisorName} not properly configured`))
         }
         const chartConfigs = await Advisor.getChartConfigs(sights)
-        from(chartConfigs).pipe(
-          concatMap((chartConfig) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
-            const chartId = hash(chartConfig)
-            if (this.charts[chartId]) {
-              this.log({ level: 'info', message: `${this.charts[chartId].name} already loaded, skipping` })
-              return resolve(chartId)
-            }
-            this.charts[chartId] = await Chart.initialize(chartId, chartConfig, {
-              exchangeInfo: this.exchangeInfo,
-              log: (event) => this.log(event),
-              notifications: this.notifications,
-              retrieveStream: (chartConfig, tickSize) => this.provider.retrieveStream(chartConfig, tickSize),
-              show: (chartId) => this.showChart(chartId)
-            })
-            return resolve(chartId)
-          })),
-          toArray()
-        ).subscribe((chartIds) => {
-          const advisor = new Advisor(advisorName, chartIds)
-          this.advisors[advisorId] = advisor
-          this.log({ level: 'success', message: `Advisor ${advisorName} running` })
-          return resolve()
-        })
+        from(chartConfigs)
+          .pipe(
+            concatMap(
+              chartConfig =>
+                // eslint-disable-next-line no-async-promise-executor
+                new Promise(async (resolve, reject) => {
+                  const chartId = hash(chartConfig)
+                  if (this.charts[chartId]) {
+                    this.log({ level: 'info', message: `${this.charts[chartId].name} already loaded, skipping` })
+                    return resolve(chartId)
+                  }
+                  this.charts[chartId] = await Chart.initialize(chartId, chartConfig, {
+                    exchangeInfo: this.exchangeInfo,
+                    log: event => this.log(event),
+                    notifications: this.notifications,
+                    retrieveStream: (chartConfig, tickSize) => this.provider.retrieveStream(chartConfig, tickSize),
+                    show: chartId => this.showChart(chartId)
+                  })
+                  return resolve(chartId)
+                })
+            ),
+            toArray()
+          )
+          .subscribe(chartIds => {
+            const advisor = new Advisor(advisorName, chartIds)
+            this.advisors[advisorId] = advisor
+            this.log({ level: 'success', message: `Advisor ${advisorName} running` })
+            return resolve()
+          })
       } catch (error) {
         error.message = `Advisor ${advisorName}: ${errorToString(error)}`
         return reject(error)
@@ -72,7 +78,8 @@ class Bot {
   }
 
   addProvider (providerId) {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
       const providerName = providerId.charAt(0).toUpperCase() + providerId.slice(1).toLowerCase()
       try {
         if (!fs.existsSync(`./providers/${providerId}/index.js`)) {
@@ -93,14 +100,14 @@ class Bot {
 
   analyzeChart ({ chartId, candles, isFinal }) {
     if (!this.paused) {
-      Object.keys(this.advisors).map(async (advisorId) => {
+      Object.keys(this.advisors).map(async advisorId => {
         const advisor = this.advisors[advisorId]
         if (advisor.chartIds.includes(chartId)) {
           const chart = this.charts[chartId]
           try {
-            const advices = (await Promise.all(advisor.analyze(candles, chart.config.strategies, isFinal))).filter((advice) => advice)
+            const advices = (await Promise.all(advisor.analyze(candles, chart.config.strategies, isFinal))).filter(advice => advice)
             if (advices.length) {
-              advices.map((advice) => this.notifications.next({ type: 'DIGEST_ADVICE', payload: { advisorId, chartId, ...advice } }))
+              advices.map(advice => this.notifications.next({ type: 'DIGEST_ADVICE', payload: { advisorId, chartId, ...advice } }))
             }
           } catch (error) {
             this.log(error)
@@ -111,10 +118,11 @@ class Bot {
   }
 
   closeTrades () {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
-      const trades = this.trades.filter((trade) => trade.isOpen)
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      const trades = this.trades.filter(trade => trade.isOpen)
       try {
-        await Promise.all(trades.map((trade) => trade.close('expire')))
+        await Promise.all(trades.map(trade => trade.close('expire')))
         return resolve()
       } catch (error) {
         return reject(error)
@@ -126,82 +134,94 @@ class Bot {
     const advisor = this.advisors[advisorId]
     const chart = this.charts[chartId]
     const who = `${advisor.name}->${chart.name}->${strategy.name}`
-    return signals.map((signal) => this.limiter.schedule(() => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
-      switch (signal) {
-        case 'CLOSE LONG':
-        case 'CLOSE SHORT': {
-          const trade = this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.who === who && trade.isOpen)
-          if (trade && ((signal === 'CLOSE LONG' && trade.isLong) || (signal === 'CLOSE SHORT' && !trade.isLong))) {
-            try {
-              await trade.close('signal')
-            } catch (error) {
-              return reject(error)
+    return signals.map(signal =>
+      this.limiter.schedule(
+        () =>
+          // eslint-disable-next-line no-async-promise-executor
+          new Promise(async (resolve, reject) => {
+            switch (signal) {
+              case 'CLOSE LONG':
+              case 'CLOSE SHORT': {
+                const trade = this.trades.find(trade => trade.advisorId === advisorId && trade.chartId === chartId && trade.who === who && trade.isOpen)
+                if (trade && ((signal === 'CLOSE LONG' && trade.isLong) || (signal === 'CLOSE SHORT' && !trade.isLong))) {
+                  try {
+                    await trade.close('signal')
+                  } catch (error) {
+                    return reject(error)
+                  }
+                }
+                return resolve()
+              }
+              case 'LONG':
+              case 'SHORT': {
+                try {
+                  const isLong = signal === 'LONG'
+                  const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
+                  const longsSellingBackAsset = this.trades.filter(trade => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
+                  const shortsSellingBackAsset = this.trades.filter(trade => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
+                  const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
+                  const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
+                  const amount = (funds * parseFloat(strategy.config.margin || 0)) / 100
+                  const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
+                  if (quantity > 0 && !this.trades.find(trade => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
+                    const trade = await Trade.initialize({
+                      advisorId,
+                      buy: (quantity, info) =>
+                        // eslint-disable-next-line no-async-promise-executor
+                        new Promise(async (resolve, reject) => {
+                          try {
+                            const order = await this.provider.buy(quantity, info)
+                            return resolve(order)
+                          } catch (error) {
+                            return reject(error)
+                          }
+                        }),
+                      chartId,
+                      exchangeInfo: this.exchangeInfo,
+                      id: `T${this.trades.length + 1}`,
+                      isLong,
+                      log: event => this.log(event),
+                      quantity,
+                      sell: (quantity, info) =>
+                        new Promise((resolve, reject) => {
+                          try {
+                            const order = this.provider.sell(quantity, info)
+                            return resolve(order)
+                          } catch (error) {
+                            return reject(error)
+                          }
+                        }),
+                      show: () => this.show(),
+                      signal,
+                      strategy,
+                      stream: chart.stream,
+                      symbol: chart.config.symbol,
+                      updateFunds: () =>
+                        // eslint-disable-next-line no-async-promise-executor
+                        new Promise(async (resolve, reject) => {
+                          try {
+                            const funds = await this.updateFunds(true)
+                            return resolve(funds)
+                          } catch (error) {
+                            return reject(error)
+                          }
+                        }),
+                      who
+                    })
+                    this.trades.push(trade)
+                    this.show()
+                  }
+                } catch (error) {
+                  return reject(error)
+                }
+                return resolve()
+              }
+              default:
+                return reject(new Error(`Unable to process signal ${signal} from ${strategy.name}`))
             }
-          }
-          return resolve()
-        }
-        case 'LONG':
-        case 'SHORT': {
-          try {
-            const isLong = signal === 'LONG'
-            const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
-            const longsSellingBackAsset = this.trades.filter((trade) => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
-            const shortsSellingBackAsset = this.trades.filter((trade) => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset)
-            const quantityLockedByTrades = longsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0) + shortsSellingBackAsset.reduce((quantity, trade) => quantity + trade.quantity, 0)
-            const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
-            const amount = funds * parseFloat(strategy.config.margin || 0) / 100
-            const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
-            if (quantity > 0 && !this.trades.find((trade) => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
-              const trade = await Trade.initialize({
-                advisorId,
-                buy: (quantity, info) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
-                  try {
-                    const order = await this.provider.buy(quantity, info)
-                    return resolve(order)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                chartId,
-                exchangeInfo: this.exchangeInfo,
-                id: `T${this.trades.length + 1}`,
-                isLong,
-                log: (event) => this.log(event),
-                quantity,
-                sell: (quantity, info) => new Promise((resolve, reject) => {
-                  try {
-                    const order = this.provider.sell(quantity, info)
-                    return resolve(order)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                show: () => this.show(),
-                signal,
-                strategy,
-                stream: chart.stream,
-                symbol: chart.config.symbol,
-                updateFunds: () => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
-                  try {
-                    const funds = await this.updateFunds(true)
-                    return resolve(funds)
-                  } catch (error) {
-                    return reject(error)
-                  }
-                }),
-                who
-              })
-              this.trades.push(trade)
-              this.show()
-            }
-          } catch (error) {
-            return reject(error)
-          }
-          return resolve()
-        }
-        default: return reject(new Error(`Unable to process signal ${signal} from ${strategy.name}`))
-      }
-    })))
+          })
+      )
+    )
   }
 
   async handleKeyPress (key) {
@@ -209,7 +229,7 @@ class Bot {
       case 'a': {
         const advisorIds = Object.keys(this.advisors)
         if (advisorIds.length) {
-          const index = advisorIds.findIndex((advisorId) => advisorId === this.currentAdvisor)
+          const index = advisorIds.findIndex(advisorId => advisorId === this.currentAdvisor)
           const nextAdvisor = index + 1 < advisorIds.length ? advisorIds[index + 1] : advisorIds[0]
           this.switchAdvisor(nextAdvisor)
           this.currentMode = 'c'
@@ -220,8 +240,8 @@ class Bot {
       case 'c':
       case 'x': {
         if (['c', 'z'].includes(this.currentMode)) {
-          const chartIds = Object.keys(this.charts).filter((chartId) => this.advisors[this.currentAdvisor].chartIds.includes(chartId) && this.charts[chartId].enabled)
-          const index = chartIds.findIndex((chartId) => chartId === this.currentChart)
+          const chartIds = Object.keys(this.charts).filter(chartId => this.advisors[this.currentAdvisor].chartIds.includes(chartId) && this.charts[chartId].enabled)
+          const index = chartIds.findIndex(chartId => chartId === this.currentChart)
           if (key === 'c') {
             const nextChart = index + 1 < chartIds.length ? chartIds[index + 1] : chartIds[0]
             this.currentChart = nextChart
@@ -244,7 +264,8 @@ class Bot {
             this.currentMode = 'd3'
             break
           }
-          default: this.currentMode = 'd1'
+          default:
+            this.currentMode = 'd1'
         }
         this.show()
         break
@@ -263,7 +284,7 @@ class Bot {
         break
       }
       case 'k': {
-        const trades = this.trades.filter((trade) => trade.isOpen)
+        const trades = this.trades.filter(trade => trade.isOpen)
         if (this.currentMode === 'q') {
           this.currentMode = 'ee'
           this.show()
@@ -325,7 +346,7 @@ class Bot {
       }
       case 'v': {
         if (['c', 'z'].includes(this.currentMode)) {
-          const trade = this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
+          const trade = this.trades.find(trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
           if (trade) {
             this.currentMode = 'v'
             this.show()
@@ -359,9 +380,9 @@ class Bot {
         break
       }
       case 'z': {
-        const trades = this.trades.filter((trade) => trade.isOpen)
+        const trades = this.trades.filter(trade => trade.isOpen)
         if (trades.length) {
-          const tradeIndex = trades.findIndex((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
+          const tradeIndex = trades.findIndex(trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
           this.currentAdvisor = trades[(['c', 'd1', 'd2', 'd3', 'v', 'z'].includes(this.currentMode) && tradeIndex > 0 ? tradeIndex : trades.length) - 1].advisorId
           this.currentChart = trades[(['c', 'd1', 'd2', 'd3', 'v', 'z'].includes(this.currentMode) && tradeIndex > 0 ? tradeIndex : trades.length) - 1].chartId
           this.currentMode = 'z'
@@ -382,25 +403,31 @@ class Bot {
         throw new Error('Provider not properly configured')
       }
       await this.addProvider(providerId)
-      this.notifications.subscribe((notification) => this.processNotification(notification))
+      this.notifications.subscribe(notification => this.processNotification(notification))
       timer(1000 * 60 * 30).subscribe(() => this.updateTimer())
       if (!Array.isArray(advisorIds)) {
         this.log(new Error('Advisors not properly configured'))
         advisorIds = []
       }
-      await forkJoin(from(advisorIds).pipe(
-        concatMap((advisorId, index) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
-          try {
-            if (typeof advisorId !== 'string' || !advisorId.length) {
-              throw new Error(`Advisor #${index + 1} not properly configured`)
-            }
-            await this.addAdvisor(advisorId)
-          } catch (error) {
-            this.log(error)
-          }
-          return resolve()
-        }))
-      )).toPromise()
+      await forkJoin(
+        from(advisorIds).pipe(
+          concatMap(
+            (advisorId, index) =>
+              // eslint-disable-next-line no-async-promise-executor
+              new Promise(async (resolve, reject) => {
+                try {
+                  if (typeof advisorId !== 'string' || !advisorId.length) {
+                    throw new Error(`Advisor #${index + 1} not properly configured`)
+                  }
+                  await this.addAdvisor(advisorId)
+                } catch (error) {
+                  this.log(error)
+                }
+                return resolve()
+              })
+          )
+        )
+      ).toPromise()
       await new Promise((resolve, reject) => {
         this.log({ level: 'info', message: 'Launching…' })
         timer(1000).subscribe(() => resolve())
@@ -421,12 +448,13 @@ class Bot {
           y: () => this.handleKeyPress('y'), // Yes (quit screen)
           z: () => this.handleKeyPress('z') // Cycle charts with open trades
         },
-        getEstimatedValue: () => Object.keys(this.funds).reduce((estimatedValue, asset) => {
-          if (this.funds[asset].dollars) {
-            return estimatedValue + this.funds[asset].dollars
-          }
-          return estimatedValue
-        }, 0),
+        getEstimatedValue: () =>
+          Object.keys(this.funds).reduce((estimatedValue, asset) => {
+            if (this.funds[asset].dollars) {
+              return estimatedValue + this.funds[asset].dollars
+            }
+            return estimatedValue
+          }, 0),
         handleResize: () => {
           delete this.readMore
           this.show()
@@ -436,12 +464,11 @@ class Bot {
       this.show()
       interval(1000).subscribe(() => {
         if (['c', 't', 'v', 'z'].includes(this.currentMode)) {
-          this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.isOpen) && this.show()
+          this.trades.find(trade => trade.advisorId === this.currentAdvisor && trade.isOpen) && this.show()
         }
       })
-      this.log({ level: 'warning', message: `Do ${chalk.inverse('NOT')} use or share this software without explicit authorization from ${chalk.underline('lropero@gmail.com')}` })
       const advisorIdsLoaded = Object.keys(this.advisors)
-      this.log({ level: advisorIdsLoaded.length ? 'success' : 'warning', message: advisorIdsLoaded.length ? `Advisors running:${advisorIdsLoaded.map((advisorId) => ' ' + this.advisors[advisorId].name)}` : 'No advisors running' })
+      this.log({ level: advisorIdsLoaded.length ? 'success' : 'warning', message: advisorIdsLoaded.length ? `Advisors running:${advisorIdsLoaded.map(advisorId => ' ' + this.advisors[advisorId].name)}` : 'No advisors running' })
       this.log({ level: 'silent', message: '--- FINISHED INITIALIZATION ---' })
     } catch (error) {
       this.log(error)
@@ -469,12 +496,14 @@ class Bot {
     const { payload, type } = notification
     try {
       switch (type) {
-        case 'ANALYZE_CHART': return this.analyzeChart(payload)
+        case 'ANALYZE_CHART':
+          return this.analyzeChart(payload)
         case 'DIGEST_ADVICE': {
           await Promise.all(this.digestAdvice(payload))
           break
         }
-        case 'RESUBSCRIBE_TRADES_TO_NEW_STREAM': return this.resubscribeTradesToNewStream(payload)
+        case 'RESUBSCRIBE_TRADES_TO_NEW_STREAM':
+          return this.resubscribeTradesToNewStream(payload)
       }
     } catch (error) {
       this.log(error)
@@ -482,12 +511,13 @@ class Bot {
   }
 
   resubscribeTradesToNewStream ({ chartId, stream }) {
-    const trades = this.trades.filter((trade) => trade.chartId === chartId && trade.isOpen)
-    trades.map((trade) => trade.subscribe(stream))
+    const trades = this.trades.filter(trade => trade.chartId === chartId && trade.isOpen)
+    trades.map(trade => trade.subscribe(stream))
   }
 
   retrieveExchangeInfo () {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
       try {
         const exchangeInfo = await this.provider.retrieveExchangeInfo()
         return resolve(exchangeInfo)
@@ -498,7 +528,8 @@ class Bot {
   }
 
   retrieveFunds (updatePrices = false) {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
       try {
         if (!this.prices || updatePrices) {
           this.prices = await this.provider.retrievePrices()
@@ -529,20 +560,35 @@ class Bot {
       switch (this.currentMode) {
         case 'c':
         case 'z': {
-          const trade = this.trades.find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen)
+          const trade = this.trades.find(trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen)
           this.ui.renderChart(this.advisors[this.currentAdvisor], this.charts[this.currentChart], trade)
           break
         }
-        case 'd1': return this.ui.renderData(this.charts[this.currentChart], 1)
-        case 'd2': return this.ui.renderData(this.charts[this.currentChart], 2)
-        case 'd3': return this.ui.renderData(this.charts[this.currentChart], 3)
-        case 'ee': return this.ui.renderEgg()
-        case 'f': return this.ui.renderFunds(this.funds)
-        case 'k': return this.ui.renderClose()
-        case 'l': return this.ui.renderLogs(this.logs.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
-        case 'q': return this.ui.renderQuit()
-        case 't': return this.ui.renderTrades(this.trades.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
-        case 'v': return this.ui.renderTrade(this.trades.slice().reverse().find((trade) => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart))
+        case 'd1':
+          return this.ui.renderData(this.charts[this.currentChart], 1)
+        case 'd2':
+          return this.ui.renderData(this.charts[this.currentChart], 2)
+        case 'd3':
+          return this.ui.renderData(this.charts[this.currentChart], 3)
+        case 'ee':
+          return this.ui.renderEgg()
+        case 'f':
+          return this.ui.renderFunds(this.funds)
+        case 'k':
+          return this.ui.renderClose()
+        case 'l':
+          return this.ui.renderLogs(this.logs.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
+        case 'q':
+          return this.ui.renderQuit()
+        case 't':
+          return this.ui.renderTrades(this.trades.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
+        case 'v':
+          return this.ui.renderTrade(
+            this.trades
+              .slice()
+              .reverse()
+              .find(trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
+          )
       }
     }
   }
@@ -556,14 +602,15 @@ class Bot {
   switchAdvisor (advisorId) {
     delete this.currentChart
     this.currentAdvisor = advisorId
-    const chartIds = Object.keys(this.charts).filter((chartId) => this.advisors[this.currentAdvisor].chartIds.includes(chartId) && this.charts[chartId].enabled)
+    const chartIds = Object.keys(this.charts).filter(chartId => this.advisors[this.currentAdvisor].chartIds.includes(chartId) && this.charts[chartId].enabled)
     if (chartIds.length) {
       this.currentChart = chartIds[0]
     }
   }
 
   updateFunds (updatePrices = false) {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
       try {
         this.funds = await this.retrieveFunds(updatePrices)
         if (this.currentMode === 'f') {
@@ -580,12 +627,14 @@ class Bot {
     try {
       await this.provider.updateServerTime()
       this.exchangeInfo = await this.retrieveExchangeInfo()
-      Object.keys(this.charts).map((chartId) => {
+      Object.keys(this.charts).map(chartId => {
         this.charts[chartId].updateInfo(this.exchangeInfo)
       })
-      this.trades.filter((trade) => trade.isOpen).map((trade) => {
-        trade.updateInfo(this.exchangeInfo)
-      })
+      this.trades
+        .filter(trade => trade.isOpen)
+        .map(trade => {
+          trade.updateInfo(this.exchangeInfo)
+        })
       await this.updateFunds(true)
       this.log({ level: 'silent', message: 'Server info updated' })
       timer(1000 * 60 * 30).subscribe(() => this.updateTimer())

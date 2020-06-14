@@ -19,8 +19,9 @@ class Chart {
   }
 
   static initialize (chartId, chartConfig, { exchangeInfo, log, notifications, retrieveStream, show }) {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
-      const info = exchangeInfo.symbols.find((info) => info.symbol === chartConfig.symbol && typeof info.status === 'string')
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      const info = exchangeInfo.symbols.find(info => info.symbol === chartConfig.symbol && typeof info.status === 'string')
       if (!info) {
         throw new Error('Info not available')
       }
@@ -52,7 +53,7 @@ class Chart {
     delete this.retries
     this.stream = stream
     this.subscription = stream.subscribe({
-      next: async (candle) => {
+      next: async candle => {
         if (Array.isArray(candle)) {
           this.candles = await withIndicators(candle, this.config.indicators || {})
         } else {
@@ -85,7 +86,7 @@ class Chart {
         }
         this.show(this.id)
       },
-      error: (error) => {
+      error: error => {
         this.log({ level: 'silent', message: `${errorToString(error)}, restarting ${this.name}` })
         this.restart()
       }
@@ -135,12 +136,13 @@ class Chart {
   }
 
   start () {
-    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
       try {
         if (!this.info) {
           throw new Error('Info not available')
         }
-        const { tickSize } = this.info.filters.find((filter) => filter.filterType === 'PRICE_FILTER')
+        const { tickSize } = this.info.filters.find(filter => filter.filterType === 'PRICE_FILTER')
         const stream = await this.retrieveStream(this.config, tickSize)
         this.enable(stream)
         return resolve()
@@ -157,7 +159,7 @@ class Chart {
   }
 
   updateInfo (exchangeInfo) {
-    const info = exchangeInfo.symbols.find((info) => info.symbol === this.info.symbol)
+    const info = exchangeInfo.symbols.find(info => info.symbol === this.info.symbol)
     if (info && hash(info) !== hash(this.info)) {
       this.info = info
       this.log({ level: 'silent', message: `Chart info updated, restarting ${this.name}` })
