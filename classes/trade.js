@@ -127,7 +127,10 @@ class Trade {
           })
           const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
           const quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
-          this.log({ level: `close${type.charAt(0).toUpperCase() + type.slice(1)}`, message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(this.decimalPlaces)}` })
+          this.log({
+            level: `close${type.charAt(0).toUpperCase() + type.slice(1)}`,
+            message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(this.decimalPlaces)}`
+          })
           this.show()
           this.calculateStats()
           return resolve()

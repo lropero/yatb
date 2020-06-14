@@ -468,7 +468,10 @@ class Bot {
         }
       })
       const advisorIdsLoaded = Object.keys(this.advisors)
-      this.log({ level: advisorIdsLoaded.length ? 'success' : 'warning', message: advisorIdsLoaded.length ? `Advisors running:${advisorIdsLoaded.map(advisorId => ' ' + this.advisors[advisorId].name)}` : 'No advisors running' })
+      this.log({
+        level: advisorIdsLoaded.length ? 'success' : 'warning',
+        message: advisorIdsLoaded.length ? `Advisors running:${advisorIdsLoaded.map(advisorId => ' ' + this.advisors[advisorId].name)}` : 'No advisors running'
+      })
       this.log({ level: 'silent', message: '--- FINISHED INITIALIZATION ---' })
     } catch (error) {
       this.log(error)
