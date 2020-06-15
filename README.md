@@ -10,7 +10,7 @@ Yet another trading bot.
 
 ### Installation
 
-```shell
+```sh
 $ npm install
 ```
 
@@ -26,7 +26,7 @@ $ npm install
 
 ### Running the bot
 
-```shell
+```sh
 # Run in safe mode
 $ npm run start
 
@@ -40,18 +40,18 @@ $ npm run start:real
 ### UI usage
 
 ```sh
-'a' → Next advisor
-'c' → Next chart
-'d' → Show chart data
-'f' → Show funds
-'k' → Close trades
-'l' → Show logs
-'p' → Pause/unpause trading
-'q' → Quit
-'t' → Show trades
-'v' → Show trade details (from chart with trade)
-'x' → Previous chart
-'z' → Cycle charts with open trades
+a → Next advisor
+c → Next chart
+d → Show chart data
+f → Show funds
+k → Close trades
+l → Show logs
+p → Pause/unpause trading
+q → Quit
+t → Show trades
+v → Show trade details (from chart with trade)
+x → Previous chart
+z → Cycle charts with open trades
 ```
 
 ### Architecture
