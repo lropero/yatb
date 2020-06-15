@@ -4,27 +4,27 @@ Yet another trading bot.
 
 <img src="yatb.gif?raw=true" width="400">
 
-### Requires
+## Requires
 
 - Node v14.4.0
 
-### Installation
+## Installation
 
 ```sh
 $ npm install
 ```
 
-### Configuration
+## Configuration
 
 - Create your advisor file(s) in `advisors` folder and setup strategies (refer to [advisors/example.js](https://github.com/lropero/yatb/blob/master/advisors/example.js))
 - Set provider and desired advisors in `config.js`
 
-### Binance configuration
+## Binance configuration
 
 - Set provider to 'binance' in `config.js`
 - Add Binance keys to `providers/binance/config.js`
 
-### Running the bot
+## Running the bot
 
 ```sh
 # Run in safe mode
@@ -37,7 +37,7 @@ $ npm run start:console
 $ npm run start:real
 ```
 
-### UI usage
+## UI usage
 
 ```sh
 a → Next advisor
@@ -54,16 +54,27 @@ x → Previous chart
 z → Cycle charts with open trades
 ```
 
-### Architecture
+## Architecture
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. In at fermentum turpis, interdum vulputate leo. Quisque rhoncus lectus molestie odio sodales dapibus id sed elit. Sed hendrerit varius felis, sodales vulputate dolor pretium et. Phasellus lorem mauris, vestibulum a feugiat id, imperdiet ultricies velit. Aenean euismod elit non libero commodo gravida. Maecenas urna leo, fringilla nec dui vitae, finibus imperdiet eros. Quisque elementum mauris et eros malesuada, nec pellentesque nisi ornare. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Vivamus efficitur, magna consequat pharetra laoreet, nulla nulla elementum velit, et imperdiet urna neque non erat. Vivamus vitae ullamcorper lectus. Fusce ut tempor risus. Suspendisse potenti. Nulla facilisi. Mauris a dolor eget lorem molestie tincidunt.
 
-### Creating strategies
+## Creating strategies
 
 You can create your own strategies and use them within your advisor(s) (Node.js skills required), ~browse existing [strateties](https://github.com/lropero/yatb/tree/master/strategies) to see how they are built~ (TODO: write how-to-build-strategy documentation).
 
 Please consider naming and sharing your strategy by creating a pull request.
 
-### TODO
+## Contributing
 
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## TODO
+
+- Add providers
+- Add strategies
+- Add tests
 - TypeScript
+
+## License
+
+[GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0/)
