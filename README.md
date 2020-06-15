@@ -60,4 +60,4 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. In at fermentum turpis,
 
 ### Creating strategies
 
-You can create your own strategies and use them within your advisor(s).
+You can create your own strategies and use them within your advisor(s). ~Browse existing [strateties](https://github.com/lropero/yatb/tree/master/strategies) to see how they are built~ TODO: write how-to-build-strategy documentation. Please consider naming and sharing your strategy by creating a pull request.
