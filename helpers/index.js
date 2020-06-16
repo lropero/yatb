@@ -1,9 +1,9 @@
-const calculateFunds = require('./calculateFunds')
-const errorToString = require('./errorToString')
-const millisecondsToTime = require('./millisecondsToTime')
-const plotVolume = require('./plotVolume')
-const timeframeToMilliseconds = require('./timeframeToMilliseconds')
-const withIndicators = require('./withIndicators')
+const calculateFunds = require('./calculate-funds')
+const errorToString = require('./error-to-string')
+const millisecondsToTime = require('./milliseconds-to-time')
+const plotVolume = require('./plot-volume')
+const timeframeToMilliseconds = require('./timeframe-to-milliseconds')
+const withIndicators = require('./with-indicators')
 
 module.exports = {
   calculateFunds,

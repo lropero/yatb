@@ -1,6 +1,6 @@
 const tulind = require('tulind')
 
-const errorToString = require('./errorToString')
+const errorToString = require('./error-to-string')
 
 function filterIndicators (object, index) {
   if (Array.isArray(object)) {
