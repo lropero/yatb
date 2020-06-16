@@ -1,4 +1,4 @@
-const tulind = require('tulind') // https://tulipindicators.org/list
+const tulind = require('tulind')
 
 const errorToString = require('./errorToString')
 
@@ -29,7 +29,13 @@ function withIndicators (candles, configIndicators) {
         const indicatorInputs = []
         indicator.input_names.map(inputName => {
           if (!allowedInputs.includes(inputName) && !allowedInputs.includes(configIndicator.inputs[inputName])) {
-            return reject(new Error(!Object.keys(configIndicator.inputs).includes(inputName) ? `Missing input '${inputName}' for indicator ${indicatorName}` : `Allowed values for input ${indicatorName}->${inputName}: ${allowedInputs.join(', ')}`))
+            return reject(
+              new Error(
+                !Object.keys(configIndicator.inputs).includes(inputName)
+                  ? `Missing input '${inputName}' for indicator ${indicatorName}`
+                  : `Allowed values for input ${indicatorName}→${inputName}: ${allowedInputs.join(', ')}`
+              )
+            )
           }
           const input = allowedInputs.includes(inputName) ? inputName : configIndicator.inputs[inputName]
           indicatorInputs.push(candles.map(candle => candle[input]))
@@ -47,7 +53,9 @@ function withIndicators (candles, configIndicators) {
           }
           indicators[indicatorName] = {}
           indicator.output_names.map((outputName, index) => {
-            indicators[indicatorName][outputName] = new Array(candles.length - results[index].length).concat(results[index])
+            indicators[indicatorName][outputName] = new Array(candles.length - results[index].length).concat(
+              results[index]
+            )
           })
         })
       })

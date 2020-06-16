@@ -8,7 +8,22 @@ const { timer } = require('rxjs')
 const { errorToString, millisecondsToTime, timeframeToMilliseconds } = require('../helpers')
 
 class Trade {
-  constructor (advisorId, buy, chartId, id, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who) {
+  constructor (
+    advisorId,
+    buy,
+    chartId,
+    id,
+    info,
+    isLong,
+    log,
+    order,
+    refresh,
+    sell,
+    strategy,
+    stream,
+    updateFunds,
+    who
+  ) {
     const { tickSize } = info.filters.find(filter => filter.filterType === 'PRICE_FILTER')
     const spent = order.fills.reduce((spent, fill) => spent + parseFloat(fill.qty) * parseFloat(fill.price), 0)
     this.advisorId = advisorId
@@ -26,43 +41,92 @@ class Trade {
         ...order
       }
     ]
-    this.price = parseFloat((order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length).toFixed(this.decimalPlaces))
-    this.profitTarget = parseFloat(strategy.config.profitTarget || 0) / 100
-    this.quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
+    this.price = parseFloat(
+      (order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length).toFixed(
+        this.decimalPlaces
+      )
+    )
+    this.profitTarget = parseFloat(strategy.config.trade.profitTarget || 0) / 100
+    this.quantity = parseFloat(
+      order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision)
+    )
+    this.refresh = refresh
     this.sell = sell
-    this.show = show
-    this.stopLoss = parseFloat(strategy.config.stopLoss || 0) / 100
-    this.stopPrice = parseFloat((this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces))
+    this.stopLoss = parseFloat(strategy.config.trade.stopLoss || 0) / 100
+    this.stopPrice = parseFloat(
+      (this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces)
+    )
     this.strategyName = strategy.name
-    this.targetPrice = parseFloat((this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces))
-    this.timeToLive = timeframeToMilliseconds(strategy.config.timeToLive || 0)
+    this.targetPrice = parseFloat(
+      (this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces)
+    )
+    this.timeToLive = timeframeToMilliseconds(strategy.config.trade.timeToLive || 0)
     this.updateFunds = updateFunds
     this.who = who
     this.subscribe(stream)
     this.log({ level: this.isLong ? 'long' : 'short', message: this.toString(true) })
   }
 
-  static initialize ({ advisorId, buy, chartId, exchangeInfo, id, isLong, log, quantity, sell, show, signal, strategy, stream, symbol, updateFunds, who }) {
+  static initialize ({
+    advisorId,
+    buy,
+    chartId,
+    exchangeInfo,
+    id,
+    isLong,
+    log,
+    quantity,
+    real,
+    refresh,
+    sell,
+    signal,
+    strategy,
+    stream,
+    symbol,
+    updateFunds,
+    who
+  }) {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      try {
-        const info = exchangeInfo.symbols.find(info => info.symbol === symbol && typeof info.status === 'string')
-        if (!info) {
-          throw new Error('Info not available')
+      if (real) {
+        try {
+          const info = exchangeInfo.symbols.find(info => info.symbol === symbol && typeof info.status === 'string')
+          if (!info) {
+            throw new Error('Info not available')
+          }
+          if (info.status !== 'TRADING') {
+            throw new Error(`Not trading, current status: ${info.status}`)
+          }
+          const order = isLong ? await buy(quantity, info) : await sell(quantity, info)
+          if (order.orderId && order.fills.length) {
+            const trade = new Trade(
+              advisorId,
+              buy,
+              chartId,
+              id,
+              info,
+              isLong,
+              log,
+              order,
+              refresh,
+              sell,
+              strategy,
+              stream,
+              updateFunds,
+              who
+            )
+            await updateFunds()
+            return resolve(trade)
+          }
+          throw new Error('Order failed')
+        } catch (error) {
+          error.message = `Trade ${signal} ${quantity} ${who}: ${errorToString(error)}`
+          return reject(error)
         }
-        if (info.status !== 'TRADING') {
-          throw new Error(`Not trading, current status: ${info.status}`)
-        }
-        const order = isLong ? await buy(quantity, info) : await sell(quantity, info)
-        if (order.orderId && order.fills.length) {
-          const trade = new Trade(advisorId, buy, chartId, id, info, isLong, log, order, sell, show, strategy, stream, updateFunds, who)
-          await updateFunds()
-          return resolve(trade)
-        }
-        throw new Error('Order failed')
-      } catch (error) {
-        error.message = `Trade ${signal} ${quantity} ${who}: ${errorToString(error)}`
-        return reject(error)
+      } else {
+        // TODO: Improve demo trades
+        log({ level: 'info', message: `Trade ${signal} ${quantity} ${who}` })
+        return resolve()
       }
     })
   }
@@ -79,16 +143,28 @@ class Trade {
         } else if (order.side === 'SELL') {
           profit += order.fills.reduce((profit, fill) => profit + parseFloat(fill.qty) * parseFloat(fill.price), 0)
         }
-        commission += order.fills.reduce((commission, fill) => commission + parseFloat(fill.commission) * (fill.commissionAsset !== 'USDT' ? funds[fill.commissionAsset].dollars / funds[fill.commissionAsset].available : 1), 0)
+        commission += order.fills.reduce(
+          (commission, fill) =>
+            commission +
+            parseFloat(fill.commission) *
+              (fill.commissionAsset !== 'USDT'
+                ? funds[fill.commissionAsset].dollars / funds[fill.commissionAsset].available
+                : 1),
+          0
+        )
       })
-      const gross = (profit - loss) * (this.info.quoteAsset !== 'USDT' ? funds[this.info.quoteAsset].dollars / funds[this.info.quoteAsset].available : 1)
+      const gross =
+        (profit - loss) *
+        (this.info.quoteAsset !== 'USDT'
+          ? funds[this.info.quoteAsset].dollars / funds[this.info.quoteAsset].available
+          : 1)
       this.stats = {
         commission,
         duration: this.orders[this.orders.length - 1].date - this.orders[0].date,
         gross,
         net: gross - commission
       }
-      this.show()
+      this.refresh()
     } catch (error) {
       error.message = `calculateStats(): ${errorToString(error)}`
       this.log(error)
@@ -126,19 +202,23 @@ class Trade {
             ...order
           })
           const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
-          const quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
+          const quantity = parseFloat(
+            order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision)
+          )
           this.log({
             level: `close${type.charAt(0).toUpperCase() + type.slice(1)}`,
-            message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(this.decimalPlaces)}`
+            message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(
+              this.decimalPlaces
+            )}`
           })
-          this.show()
+          this.refresh()
           this.calculateStats()
           return resolve()
         }
         throw new Error('Order failed')
       } catch (error) {
         this.isOpen = false
-        this.show()
+        this.refresh()
         error.message = `Unable to close ${chalk.underline(this.id)}: ${errorToString(error)}`
         return reject(error)
       }
@@ -216,7 +296,11 @@ class Trade {
   }
 
   toString (log = false, who = true) {
-    const string = `${chalk.underline(this.id)} ${this.info.symbol} ${this.quantity}${chalk[this.isOpen ? 'cyan' : 'gray']('@')}${this.price.toFixed(this.decimalPlaces)} ${chalk[this.isOpen ? 'green' : 'gray']('TRGT ' + this.targetPrice.toFixed(this.decimalPlaces))} ${chalk[this.isOpen ? 'red' : 'gray']('STOP ' + this.stopPrice.toFixed(this.decimalPlaces))}`
+    const string = `${chalk.underline(this.id)} ${this.info.symbol} ${this.quantity}${chalk[
+      this.isOpen ? 'cyan' : 'gray'
+    ]('@')}${this.price.toFixed(this.decimalPlaces)} ${chalk[this.isOpen ? 'green' : 'gray'](
+      'TRGT ' + this.targetPrice.toFixed(this.decimalPlaces)
+    )} ${chalk[this.isOpen ? 'red' : 'gray']('STOP ' + this.stopPrice.toFixed(this.decimalPlaces))}`
     if (log) {
       return `${string} #avoidBlack${this.who}#`
     }
@@ -239,7 +323,22 @@ class Trade {
       }
     }
     const timeRemaining = this.timeToLive ? new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date() : 0
-    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'dd-MMM-yy HH:mm:ss'))} ${this.isOpen ? chalk.white(string) : chalk.gray(string)} ${chalk.gray(who ? this.who : this.strategyName)}${this.stats ? ' ' + chalk.cyan.dim(millisecondsToTime(this.stats.duration)) + ' ' + chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) + ' - ' + chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) + ' = ' + chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 })) : this.isOpen && timeRemaining > 0 ? ' ' + chalk.blue(millisecondsToTime(timeRemaining)) : ''}`
+    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'dd-MMM-yy HH:mm:ss'))} ${
+      this.isOpen ? chalk.white(string) : chalk.gray(string)
+    } ${chalk.gray(who ? this.who : this.strategyName)}${
+      this.stats
+        ? ' ' +
+          chalk.cyan.dim(millisecondsToTime(this.stats.duration)) +
+          ' ' +
+          chalk[this.stats.gross > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.gross), { precision: 3 })) +
+          ' - ' +
+          chalk.yellow(formatMoney(this.stats.commission, { precision: 3 })) +
+          ' = ' +
+          chalk[this.stats.net > 0 ? 'green' : 'red'](formatMoney(Math.abs(this.stats.net), { precision: 3 }))
+        : this.isOpen && timeRemaining > 0
+        ? ' ' + chalk.blue(millisecondsToTime(timeRemaining))
+        : ''
+    }`
   }
 
   updateInfo (exchangeInfo) {

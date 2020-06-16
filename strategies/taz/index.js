@@ -4,11 +4,18 @@
  * (good for trending-up markets)
  */
 
+const deepKeys = require('deep-keys')
+
 class Strategy {
   static analyze (candles, isFinal, params) {
     return new Promise((resolve, reject) => {
+      // Params validation
+      if (JSON.stringify(deepKeys(params)) !== '["indicators.ema","indicators.sma","periods"]') {
+        return reject(new Error('Params not configured properly'))
+      }
+
       const signals = []
-      if (candles.length < 2) {
+      if (candles.length < 2 || candles.length < params.periods) {
         return resolve(signals)
       }
       const {
@@ -53,8 +60,8 @@ class Strategy {
     })
   }
 
-  static getConfigIndicators (paramsIndicators) {
-    if (paramsIndicators.length !== 2) {
+  static getParamsIndicators (paramsIndicators) {
+    if (JSON.stringify(deepKeys(paramsIndicators)) !== '["ema","sma"]') {
       return false
     }
     return {
@@ -64,7 +71,7 @@ class Strategy {
           real: 'close'
         },
         options: {
-          period: paramsIndicators[0]
+          period: paramsIndicators.ema
         }
       },
       slow: {
@@ -73,7 +80,7 @@ class Strategy {
           real: 'close'
         },
         options: {
-          period: paramsIndicators[1]
+          period: paramsIndicators.sma
         }
       }
     }

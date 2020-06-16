@@ -1,14 +1,12 @@
 const asciichart = require('asciichart')
 const blessed = require('blessed')
 const chalk = require('chalk')
-const chalkAnimation = require('chalk-animation')
 const figures = require('figures')
-const sfx = require('sfx')
 const stripAnsi = require('strip-ansi')
 const { debounceTime } = require('rxjs/operators')
 const { format } = require('date-fns')
 const { formatMoney } = require('accounting-js')
-const { fromEvent, timer } = require('rxjs')
+const { fromEvent } = require('rxjs')
 const { pretty } = require('js-object-pretty-print')
 
 const { millisecondsToTime, plotVolume } = require('../helpers')
@@ -62,7 +60,6 @@ class UI {
     fromEvent(this.screen, 'resize')
       .pipe(debounceTime(10))
       .subscribe(() => {
-        if (this.egg) this.egg.unsubscribe()
         this.drawLogger()
         config.handleResize()
       })
@@ -106,7 +103,17 @@ class UI {
       }
     })
     this.footerRight = blessed.box({
-      content: `${chalk[colors.FOOTER_OPTION_KEY]('a')}${chalk[colors.FOOTER_OPTION]('dvisors')}  ${chalk[colors.FOOTER_OPTION_KEY]('x')} ${chalk[colors.FOOTER_OPTION_ARROW]('<<')} ${chalk[colors.FOOTER_OPTION]('charts')} ${chalk[colors.FOOTER_OPTION_ARROW]('>>')} ${chalk[colors.FOOTER_OPTION_KEY]('c')}  ${chalk[colors.FOOTER_OPTION_KEY]('d')}${chalk[colors.FOOTER_OPTION]('ata')}  ${chalk[colors.FOOTER_OPTION_KEY]('f')}${chalk[colors.FOOTER_OPTION]('unds')}  ${chalk[colors.FOOTER_OPTION_KEY]('l')}${chalk[colors.FOOTER_OPTION]('ogs')}  ${chalk[colors.FOOTER_OPTION_KEY]('t')}${chalk[colors.FOOTER_OPTION]('rades')}  ${chalk[colors.FOOTER_OPTION_KEY]('q')}${chalk[colors.FOOTER_OPTION]('uit')}`,
+      content: `${chalk[colors.FOOTER_OPTION_KEY]('a')}${chalk[colors.FOOTER_OPTION]('dvisors')}  ${chalk[
+        colors.FOOTER_OPTION_KEY
+      ]('x')} ${chalk[colors.FOOTER_OPTION_ARROW]('<<')} ${chalk[colors.FOOTER_OPTION]('charts')} ${chalk[
+        colors.FOOTER_OPTION_ARROW
+      ]('>>')} ${chalk[colors.FOOTER_OPTION_KEY]('c')}  ${chalk[colors.FOOTER_OPTION_KEY]('d')}${chalk[
+        colors.FOOTER_OPTION
+      ]('ata')}  ${chalk[colors.FOOTER_OPTION_KEY]('f')}${chalk[colors.FOOTER_OPTION]('unds')}  ${chalk[
+        colors.FOOTER_OPTION_KEY
+      ]('l')}${chalk[colors.FOOTER_OPTION]('ogs')}  ${chalk[colors.FOOTER_OPTION_KEY]('t')}${chalk[
+        colors.FOOTER_OPTION
+      ]('rades')}  ${chalk[colors.FOOTER_OPTION_KEY]('q')}${chalk[colors.FOOTER_OPTION]('uit')}`,
       height: 'shrink',
       left: '50%',
       style: {
@@ -148,11 +155,12 @@ class UI {
   }
 
   renderChart (advisor, chart, trade) {
-    if (this.egg) this.egg.unsubscribe()
     const { close: quote, direction = '' } = chart.candles[chart.candles.length - 1]
     const { tickSize } = chart.info.filters.find(filter => filter.filterType === 'PRICE_FILTER')
     const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
-    const candles = chart.candles.slice(Math.max(chart.candles.length - this.screen.cols + quote.toString().split('.')[0].length + decimalPlaces + 3, 0))
+    const candles = chart.candles.slice(
+      Math.max(chart.candles.length - this.screen.cols + quote.toString().split('.')[0].length + decimalPlaces + 3, 0)
+    )
     let quoteColor = colors.CHART_PRICE_NEW_CANDLE
     if (direction.length) {
       switch (direction) {
@@ -184,7 +192,9 @@ class UI {
     const tradeNumbers = {}
     if (trade) {
       const prices = ascii.reduce((prices, line) => {
-        const split = line.split(line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532))
+        const split = line.split(
+          line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532)
+        )
         if (split.length === 2) {
           prices.push(split[0].trim())
         }
@@ -205,7 +215,10 @@ class UI {
         const indexStopPrice = distancesStopPrice.indexOf(Math.min(...distancesStopPrice))
         if (indexStopPrice === 0 && Math.abs(prices[0] - trade.stopPrice) < distance) {
           tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
-        } else if (indexStopPrice === prices.length - 1 && Math.abs(prices[prices.length - 1] - trade.stopPrice) < distance) {
+        } else if (
+          indexStopPrice === prices.length - 1 &&
+          Math.abs(prices[prices.length - 1] - trade.stopPrice) < distance
+        ) {
           tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
         } else if (indexStopPrice !== 0 && indexStopPrice !== prices.length - 1) {
           tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
@@ -214,7 +227,10 @@ class UI {
         const indexTargetPrice = distancesTargetPrice.indexOf(Math.min(...distancesTargetPrice))
         if (indexTargetPrice === 0 && Math.abs(prices[0] - trade.targetPrice) < distance) {
           tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
-        } else if (indexTargetPrice === prices.length - 1 && Math.abs(prices[prices.length - 1] - trade.targetPrice) < distance) {
+        } else if (
+          indexTargetPrice === prices.length - 1 &&
+          Math.abs(prices[prices.length - 1] - trade.targetPrice) < distance
+        ) {
           tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
         } else if (indexTargetPrice !== 0 && indexTargetPrice !== prices.length - 1) {
           tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
@@ -223,19 +239,37 @@ class UI {
     }
     const asciiStyled = ascii
       .reduce((asciiStyled, line, index) => {
-        const split = line.split(line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532))
+        const split = line.split(
+          line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532)
+        )
         if (split.length === 2) {
           const price = split[0].trim()
           let drawing = chalk[colors.CHART_DRAWING](split[1].slice(0, -1))
           const isQuote = String.fromCharCode(9472, 9581, 9584).includes(stripAnsi(drawing).slice(-1))
           if (!asciiStyled.length) {
             chartLength = stripAnsi(drawing).length
-            const title = chalk[colors.CHART_TITLE](`${advisor.name} - ${chart.name}`) + (trade ? ' ' + trade.toString(false, false) : '')
+            const title =
+              chalk[colors.CHART_TITLE](`${advisor.name} - ${chart.name}`) +
+              (trade ? ' ' + trade.toString(false, false) : '')
             if (chartLength > stripAnsi(title).length) {
               drawing = `${title} ${chalk[colors.CHART_DRAWING](stripAnsi(drawing).slice(stripAnsi(title).length + 1))}`
             }
           }
-          asciiStyled.push(`${drawing}${chalk[colors.CHART_BORDER](String.fromCharCode(9474))}${trade && tradeNumbers[index] && tradeNumbers[index].tradePrice ? (trade.isLong ? chalk[colors.TRADE_LONG](figures.arrowUp) : chalk[colors.TRADE_SHORT](figures.arrowDown)) : ' '}${isQuote ? chalk[quoteColor](quote.toFixed(decimalPlaces)) : (tradeNumbers[index] && tradeNumbers[index].tradePrice) || tradeNumbers[index] || chalk[colors.CHART_PRICE](price)}`)
+          asciiStyled.push(
+            `${drawing}${chalk[colors.CHART_BORDER](String.fromCharCode(9474))}${
+              trade && tradeNumbers[index] && tradeNumbers[index].tradePrice
+                ? trade.isLong
+                  ? chalk[colors.TRADE_LONG](figures.arrowUp)
+                  : chalk[colors.TRADE_SHORT](figures.arrowDown)
+                : ' '
+            }${
+              isQuote
+                ? chalk[quoteColor](quote.toFixed(decimalPlaces))
+                : (tradeNumbers[index] && tradeNumbers[index].tradePrice) ||
+                  tradeNumbers[index] ||
+                  chalk[colors.CHART_PRICE](price)
+            }`
+          )
           return asciiStyled
         }
       }, [])
@@ -258,13 +292,17 @@ class UI {
   }
 
   renderClose () {
-    if (this.egg) this.egg.unsubscribe()
-    this.display.setContent(chalk[colors.DISPLAY_FOREGROUND](figures.play) + ' ' + chalk.white('Really close all trades?') + ' ' + chalk.gray(`Press ${chalk.yellow('Y')} to confirm`))
+    this.display.setContent(
+      chalk[colors.DISPLAY_FOREGROUND](figures.play) +
+        ' ' +
+        chalk.white('Really close all trades?') +
+        ' ' +
+        chalk.gray(`Press ${chalk.yellow('Y')} to confirm`)
+    )
     this.screen.render()
   }
 
   renderData (chart, mode) {
-    if (this.egg) this.egg.unsubscribe()
     switch (mode) {
       case 1: {
         const candles = chart.candles.slice().reverse()
@@ -319,23 +357,8 @@ class UI {
     this.screen.render()
   }
 
-  renderEgg () {
-    if (this.egg) this.egg.unsubscribe()
-    const fxs = ['glitch', 'karaoke', 'neon', 'pulse', 'radar', 'rainbow']
-    const potatoes = 'potatoes and black holes and '.repeat(Math.floor(Math.random() * 50) + 1)
-    const animation = chalkAnimation[fxs[Math.floor(Math.random() * 6)]](potatoes.slice(0, potatoes.length - 5)).stop()
-    this.egg = timer(0, Math.floor(Math.random() * 49) + 2).subscribe(() => {
-      this.display.setContent(animation.frame().slice(11))
-      this.screen.render()
-    })
-    if (Math.floor(Math.random() * 10) === 0) {
-      sfx.say('pim pum pim pum pim pum dum dee dum')
-    }
-  }
-
   renderFunds (funds) {
     if (funds) {
-      if (this.egg) this.egg.unsubscribe()
       const estimatedValue = Object.keys(funds).reduce((estimatedValue, asset) => {
         if (funds[asset].dollars) {
           return estimatedValue + funds[asset].dollars
@@ -346,7 +369,16 @@ class UI {
         `${chalk[colors.FUNDS_TITLE](`Estimated value: ${formatMoney(estimatedValue, { precision: 3 })}`)}\n` +
           Object.keys(funds)
             .sort()
-            .map(asset => `${chalk[colors.FUNDS_ASSET](asset)} ${chalk[colors.FUNDS_AVAILABLE](funds[asset].available)}${funds[asset].onOrder > 0 ? ' ' + chalk[colors.FUNDS_ORDER](funds[asset].onOrder) : ''}${funds[asset].dollars > 0 ? ' ' + chalk[colors.FUNDS_DOLLARS](formatMoney(funds[asset].dollars, { precision: 3 })) : ''}`)
+            .map(
+              asset =>
+                `${chalk[colors.FUNDS_ASSET](asset)} ${chalk[colors.FUNDS_AVAILABLE](funds[asset].available)}${
+                  funds[asset].onOrder > 0 ? ' ' + chalk[colors.FUNDS_ORDER](funds[asset].onOrder) : ''
+                }${
+                  funds[asset].dollars > 0
+                    ? ' ' + chalk[colors.FUNDS_DOLLARS](formatMoney(funds[asset].dollars, { precision: 3 }))
+                    : ''
+                }`
+            )
             .join('\n')
       )
       this.screen.render()
@@ -355,23 +387,28 @@ class UI {
 
   renderLogs (logs) {
     if (logs.length) {
-      if (this.egg) this.egg.unsubscribe()
       this.display.setContent(logs.map(log => log.toString(true)).join('\n'))
       this.screen.render()
     }
   }
 
   renderQuit () {
-    if (this.egg) this.egg.unsubscribe()
-    this.display.setContent(chalk[colors.DISPLAY_FOREGROUND](figures.play) + ' ' + chalk.white('Really quit?') + ' ' + chalk.gray(`Press ${chalk.yellow('Y')} to confirm`))
+    this.display.setContent(
+      chalk[colors.DISPLAY_FOREGROUND](figures.play) +
+        ' ' +
+        chalk.white('Really quit?') +
+        ' ' +
+        chalk.gray(`Press ${chalk.yellow('Y')} to confirm`)
+    )
     this.screen.render()
   }
 
   renderTrade (trade) {
     if (trade) {
-      if (this.egg) this.egg.unsubscribe()
-      const { advisorId, buy, chartId, info, log, sell, show, updateFunds, stop, target, timer, ...rest } = trade
-      const timeRemaining = trade.timeToLive ? new Date(trade.orders[0].date.getTime() + trade.timeToLive) - new Date() : 0
+      const { advisorId, buy, chartId, info, log, refresh, sell, stop, target, timer, updateFunds, ...rest } = trade
+      const timeRemaining = trade.timeToLive
+        ? new Date(trade.orders[0].date.getTime() + trade.timeToLive) - new Date()
+        : 0
       this.display.setContent(
         chalk[trade.isOpen ? 'yellow' : 'gray'](
           pretty(
@@ -391,7 +428,6 @@ class UI {
 
   renderTrades (trades) {
     if (trades.length) {
-      if (this.egg) this.egg.unsubscribe()
       this.display.setContent(trades.map(trade => trade.toString()).join('\n'))
       this.screen.render()
     }

@@ -1,17 +1,17 @@
-/*
- * Traders Action Zone Strategy (with a volume twist)
- * http://www.swing-trade-stocks.com/traders-action-zone.html
- * (good for trending-up markets, like Taz but more conservative)
- */
+const deepKeys = require('deep-keys')
 
 class Strategy {
   static analyze (candles, isFinal, params) {
     return new Promise((resolve, reject) => {
-      if (params.length !== 1) {
-        return reject(new Error('Wrong number of params'))
+      // Params validation
+      if (JSON.stringify(deepKeys(params)) !== '["indicators.ema","indicators.sma","periods","windows.volumes"]') {
+        return reject(new Error('Params not configured properly'))
+      } else if (params.periods < Math.max(...Object.values(params.windows))) {
+        return reject(new Error('Params not configured properly'))
       }
+
       const signals = []
-      if (candles.length < 2 || candles.length < params[0]) {
+      if (candles.length < 2 || candles.length < params.periods) {
         return resolve(signals)
       }
       const {
@@ -26,7 +26,9 @@ class Strategy {
           // Last candle is final
           if (candles[0].close > fast.ema && candles[0].close < slow.sma) {
             // Price is in the zone
-            if (candles[0].volume === Math.max(...candles.slice(0, params[0]).map(candle => candle.volume))) {
+            if (
+              candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))
+            ) {
               // Volume larger than previous candles
               signals.push('LONG')
             }
@@ -42,7 +44,9 @@ class Strategy {
           // Last candle is final
           if (candles[0].close < fast.ema && candles[0].close > slow.sma) {
             // Price is in the zone
-            if (candles[0].volume === Math.max(...candles.slice(0, params[0]).map(candle => candle.volume))) {
+            if (
+              candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))
+            ) {
               // Volume larger than previous candles
               signals.push('SHORT')
             }
@@ -56,8 +60,8 @@ class Strategy {
     })
   }
 
-  static getConfigIndicators (paramsIndicators) {
-    if (paramsIndicators.length !== 2) {
+  static getParamsIndicators (paramsIndicators) {
+    if (JSON.stringify(deepKeys(paramsIndicators)) !== '["ema","sma"]') {
       return false
     }
     return {
@@ -67,7 +71,7 @@ class Strategy {
           real: 'close'
         },
         options: {
-          period: paramsIndicators[0]
+          period: paramsIndicators.ema
         }
       },
       slow: {
@@ -76,7 +80,7 @@ class Strategy {
           real: 'close'
         },
         options: {
-          period: paramsIndicators[1]
+          period: paramsIndicators.sma
         }
       }
     }

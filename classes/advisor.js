@@ -9,60 +9,75 @@ class Advisor {
     this.chartIds = chartIds
   }
 
-  static getChartConfigs (sights) {
+  static getChartConfigs (advisorConfig) {
     return new Promise((resolve, reject) => {
       try {
-        const chartConfigs = sights.reduce((chartConfigs, sight, index) => {
+        const chartConfigs = advisorConfig.reduce((chartConfigs, sight, index) => {
           if (!(sight instanceof Object) || Array.isArray(sight)) {
-            return reject(new Error(`Sight #${index + 1} not properly configured`))
+            return reject(new Error(`Sight #${index + 1} not configured properly`))
           }
           if (!sight.symbol || typeof sight.symbol !== 'string' || !sight.symbol.length) {
-            return reject(new Error(`Sight #${index + 1}: Symbol not properly configured`))
+            return reject(new Error(`Sight #${index + 1}: Symbol not configured properly`))
           }
           if (!sight.timeframe || typeof sight.timeframe !== 'string' || !sight.timeframe.length) {
-            return reject(new Error(`Sight #${index + 1}: Timeframe not properly configured`))
+            return reject(new Error(`Sight #${index + 1}: Timeframe not configured properly`))
           }
           const { strategies = {} } = sight
           if (!(strategies instanceof Object) || Array.isArray(strategies)) {
-            return reject(new Error(`Sight #${index + 1}: Strategies not properly configured`))
+            return reject(new Error(`Sight #${index + 1}: Strategies not configured properly`))
           }
           const indicators = {}
           Object.keys(strategies).map((strategyId, jndex) => {
             if (typeof strategyId !== 'string' || !strategyId.length) {
-              return reject(new Error(`Sight #${index + 1}: Strategy #${jndex + 1} not properly configured`))
+              return reject(new Error(`Sight #${index + 1}: Strategy #${jndex + 1} not configured properly`))
             }
             const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
             const strategyConfig = strategies[strategyId]
-            const margin = parseFloat(strategyConfig.margin || 0)
-            const profitTarget = parseFloat(strategyConfig.profitTarget || 0)
-            const stopLoss = parseFloat(strategyConfig.stopLoss || 0)
-            if (!(margin > 0) || margin > 100 || !(profitTarget > 0) || !(stopLoss > 0) || stopLoss > 100) {
-              return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName} not properly configured`))
+            const profitTarget = parseFloat(strategyConfig.trade.profitTarget || 0)
+            const risk = parseFloat(strategyConfig.trade.risk || 0)
+            const stopLoss = parseFloat(strategyConfig.trade.stopLoss || 0)
+            if (!(risk > 0) || risk > 100 || !(profitTarget > 0) || !(stopLoss > 0) || stopLoss > 100) {
+              return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName} not configured properly`))
             }
             if (!fs.existsSync(`./strategies/${strategyId}/index.js`)) {
               return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName} doesn't exist`))
             }
             const Strategy = require(`../strategies/${strategyId}`)
-            const configIndicators = typeof Strategy.getConfigIndicators === 'function' ? Strategy.getConfigIndicators(strategyConfig.paramsIndicators || []) : {}
-            if (!(configIndicators instanceof Object) || Array.isArray(configIndicators)) {
-              return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicators not properly configured`))
+            const paramsIndicators =
+              typeof Strategy.getParamsIndicators === 'function'
+                ? Strategy.getParamsIndicators((strategyConfig.params && strategyConfig.params.indicators) || {})
+                : {}
+            if (!(paramsIndicators instanceof Object) || Array.isArray(paramsIndicators)) {
+              return reject(
+                new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicators not configured properly`)
+              )
             }
-            Object.keys(configIndicators).map((indicatorId, kndex) => {
+            Object.keys(paramsIndicators).map((indicatorId, kndex) => {
               if (typeof indicatorId !== 'string' || !indicatorId.length) {
-                return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator #${kndex + 1} not properly configured`))
+                return reject(
+                  new Error(
+                    `Sight #${index + 1}: Strategy ${strategyName}: Indicator #${kndex + 1} not configured properly`
+                  )
+                )
               }
               const indicatorName = indicatorId.charAt(0).toUpperCase() + indicatorId.slice(1).toLowerCase()
               if (indicators[indicatorId]) {
                 return reject(new Error(`Sight #${index + 1}: Parallel strategies sharing indicator ID`))
               }
-              const { type = '' } = configIndicators[indicatorId]
+              const { type = '' } = paramsIndicators[indicatorId]
               if (typeof type !== 'string' || !type.length) {
-                return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} not properly configured`))
+                return reject(
+                  new Error(
+                    `Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} not configured properly`
+                  )
+                )
               }
               if (!tulind.indicators[type.toLowerCase()]) {
-                return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} doesn't exist`))
+                return reject(
+                  new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} doesn't exist`)
+                )
               }
-              indicators[indicatorId] = configIndicators[indicatorId]
+              indicators[indicatorId] = paramsIndicators[indicatorId]
             })
           })
           if (Object.keys(indicators).length) {
@@ -82,10 +97,11 @@ class Advisor {
     })
   }
 
-  analyze (candles, strategies, isFinal) {
+  analyze (candles, strategies, isFinal, who) {
     return Object.keys(strategies).map(
       strategyId =>
-        new Promise((resolve, reject) => {
+        // eslint-disable-next-line no-async-promise-executor
+        new Promise(async (resolve, reject) => {
           const strategyName = strategyId.charAt(0).toUpperCase() + strategyId.slice(1).toLowerCase()
           const strategyConfig = strategies[strategyId]
           try {
@@ -93,7 +109,7 @@ class Advisor {
               return reject(new Error(`Strategy ${strategyName} doesn't exist`))
             }
             const Strategy = require(`../strategies/${strategyId}`)
-            const signals = Strategy.analyze(candles, isFinal, strategyConfig.params || [])
+            const signals = await Strategy.analyze(candles, isFinal, strategyConfig.params || [])
             if (signals.length) {
               signals.sort()
               return resolve({
@@ -106,7 +122,7 @@ class Advisor {
             }
             return resolve()
           } catch (error) {
-            error.message = `Strategy ${strategyName}: ${errorToString(error)}`
+            error.message = `Strategy ${who}→${strategyName}: ${errorToString(error)}`
             return reject(error)
           }
         })

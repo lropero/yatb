@@ -1,13 +1,15 @@
 {
   "name": "yatb",
-  "version": "0.3.7",
+  "version": "1.0.0",
   "description": "Yet another trading bot.",
   "scripts": {
-    "clean": "rm -f .yarnrc && rm -f yarn-*.log && rm -f yarn.lock && rm -rf node_modules && yarn cache clean",
+    "clean": "rimraf npm-*.log && rimraf package-lock.json && rimraf node_modules && npm cache verify",
     "lint": "prettier-standard --lint",
-    "nuke": "yarn run clean && yarn && git checkout .yarnrc",
+    "nuke": "npm run clean && npm install",
     "start": "node index.js",
-    "upgrade": "npx upgradeps"
+    "start:console": "node index.js -c",
+    "start:real": "node index.js -r",
+    "upgrade": "npx upgradeps -n"
   },
   "dependencies": {
     "accounting-js": "^1.1.1",
@@ -16,12 +18,13 @@
     "blessed": "^0.1.81",
     "bottleneck": "^2.19.5",
     "chalk": "^4.1.0",
-    "chalk-animation": "^1.6.0",
+    "commander": "^5.1.0",
     "date-fns": "^2.14.0",
+    "deep-keys": "^0.5.0",
     "figures": "^3.2.0",
     "is-online": "^8.4.0",
     "js-object-pretty-print": "^0.3.0",
-    "node-binance-api": "^0.11.6",
+    "node-binance-api": "^0.11.7",
     "object-hash": "^2.0.3",
     "rxjs": "^6.5.5",
     "sfx": "^0.1.1",
@@ -32,8 +35,8 @@
   "devDependencies": {
     "husky": "^4.2.5",
     "lint-staged": "^10.2.10",
-    "node-gyp": "^7.0.0",
     "prettier-standard": "^16.3.0",
+    "rimraf": "^3.0.2",
     "upgradeps": "^1.4.0"
   },
   "husky": {

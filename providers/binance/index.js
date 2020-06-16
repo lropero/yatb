@@ -152,14 +152,28 @@ class Provider {
                 const stream = from(candlesticks).pipe(
                   take(PERIODS),
                   map(candlestick => {
-                    const [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume] = candlestick
+                    const [
+                      time,
+                      open,
+                      high,
+                      low,
+                      close,
+                      volume,
+                      closeTime,
+                      assetVolume,
+                      trades,
+                      buyBaseVolume,
+                      buyAssetVolume
+                    ] = candlestick
                     return {
                       time,
                       open: parseFloat(open),
                       high: parseFloat(high),
                       low: parseFloat(low),
                       close: parseFloat(close),
-                      range: parseFloat(((parseFloat(high) - parseFloat(low)) / parseFloat(tickSize)).toFixed(decimalPlaces)),
+                      range: parseFloat(
+                        ((parseFloat(high) - parseFloat(low)) / parseFloat(tickSize)).toFixed(decimalPlaces)
+                      ),
                       volume: parseFloat(volume),
                       closeTime,
                       assetVolume: parseFloat(assetVolume),
@@ -176,25 +190,33 @@ class Provider {
                   }, []),
                   concat(
                     Observable.create(observer => {
-                      const endpoint = this.api.websockets.candlesticks(chartConfig.symbol, chartConfig.timeframe, tick => {
-                        const { k: candle } = tick
-                        observer.next({
-                          time: candle.t,
-                          open: parseFloat(candle.o),
-                          high: parseFloat(candle.h),
-                          low: parseFloat(candle.l),
-                          close: parseFloat(candle.c),
-                          range: parseFloat(((parseFloat(candle.h) - parseFloat(candle.l)) / parseFloat(tickSize)).toFixed(decimalPlaces)),
-                          volume: parseFloat(candle.v),
-                          closeTime: candle.T,
-                          assetVolume: parseFloat(candle.q),
-                          trades: candle.n,
-                          buyBaseVolume: parseFloat(candle.V),
-                          buyAssetVolume: parseFloat(candle.Q),
-                          volumePerTrade: candle.n ? candle.v / candle.n : 0,
-                          isFinal: candle.x
-                        })
-                      })
+                      const endpoint = this.api.websockets.candlesticks(
+                        chartConfig.symbol,
+                        chartConfig.timeframe,
+                        tick => {
+                          const { k: candle } = tick
+                          observer.next({
+                            time: candle.t,
+                            open: parseFloat(candle.o),
+                            high: parseFloat(candle.h),
+                            low: parseFloat(candle.l),
+                            close: parseFloat(candle.c),
+                            range: parseFloat(
+                              ((parseFloat(candle.h) - parseFloat(candle.l)) / parseFloat(tickSize)).toFixed(
+                                decimalPlaces
+                              )
+                            ),
+                            volume: parseFloat(candle.v),
+                            closeTime: candle.T,
+                            assetVolume: parseFloat(candle.q),
+                            trades: candle.n,
+                            buyBaseVolume: parseFloat(candle.V),
+                            buyAssetVolume: parseFloat(candle.Q),
+                            volumePerTrade: candle.n ? candle.v / candle.n : 0,
+                            isFinal: candle.x
+                          })
+                        }
+                      )
                       return () => this.api.websockets.terminate(endpoint)
                     })
                   ),

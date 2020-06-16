@@ -3,7 +3,7 @@
     {
       "files": "*.js",
       "options": {
-        "printWidth": 1200
+        "printWidth": 120
       }
     }
   ]

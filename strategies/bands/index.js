@@ -1,13 +1,15 @@
-/*
- * Bollinger Bands Strategy
- * (good for lateral non-trending markets)
- */
+const deepKeys = require('deep-keys')
 
 class Strategy {
   static analyze (candles, isFinal, params) {
     return new Promise((resolve, reject) => {
+      // Params validation
+      if (JSON.stringify(deepKeys(params)) !== '["indicators.period","indicators.stddev","periods"]') {
+        return reject(new Error('Params not configured properly'))
+      }
+
       const signals = []
-      if (candles.length < 2) {
+      if (candles.length < 2 || candles.length < params.periods) {
         return resolve(signals)
       }
       const {
@@ -31,8 +33,8 @@ class Strategy {
     })
   }
 
-  static getConfigIndicators (paramsIndicators) {
-    if (paramsIndicators.length !== 2) {
+  static getParamsIndicators (paramsIndicators) {
+    if (JSON.stringify(deepKeys(paramsIndicators)) !== '["period","stddev"]') {
       return false
     }
     return {
@@ -42,8 +44,8 @@ class Strategy {
           real: 'close'
         },
         options: {
-          period: paramsIndicators[0],
-          stddev: paramsIndicators[1]
+          period: paramsIndicators.period,
+          stddev: paramsIndicators.stddev
         }
       }
     }

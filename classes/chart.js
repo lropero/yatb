@@ -6,7 +6,7 @@ const { interval, timer } = require('rxjs')
 const { errorToString, timeframeToMilliseconds, withIndicators } = require('../helpers')
 
 class Chart {
-  constructor (id, config, info, log, notifications, retrieveStream, show) {
+  constructor (id, config, info, log, notifications, refreshChart, retrieveStream) {
     this.id = id
     this.config = config
     this.enabled = false
@@ -14,18 +14,20 @@ class Chart {
     this.log = log
     this.name = `${config.symbol} ${config.timeframe} [${id.substr(0, 8)}]`
     this.notifications = notifications
+    this.refreshChart = refreshChart
     this.retrieveStream = retrieveStream
-    this.show = show
   }
 
-  static initialize (chartId, chartConfig, { exchangeInfo, log, notifications, retrieveStream, show }) {
+  static initialize (chartId, chartConfig, { exchangeInfo, log, notifications, refreshChart, retrieveStream }) {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const info = exchangeInfo.symbols.find(info => info.symbol === chartConfig.symbol && typeof info.status === 'string')
+      const info = exchangeInfo.symbols.find(
+        info => info.symbol === chartConfig.symbol && typeof info.status === 'string'
+      )
       if (!info) {
         throw new Error('Info not available')
       }
-      const chart = new Chart(chartId, chartConfig, info, log, notifications, retrieveStream, show)
+      const chart = new Chart(chartId, chartConfig, info, log, notifications, refreshChart, retrieveStream)
       try {
         await chart.start()
         log({ level: 'info', message: `Added chart ${chart.name}` })
@@ -87,7 +89,7 @@ class Chart {
             })
           }
         }
-        this.show(this.id)
+        this.refreshChart(this.id)
       },
       error: error => {
         this.log({ level: 'silent', message: `${errorToString(error)}, restarting ${this.name}` })
@@ -155,7 +157,9 @@ class Chart {
         }
         const retryTime = 1000 * 60 * ++this.retries
         timer(retryTime).subscribe(() => this.restart())
-        error.message = `Chart ${this.name}: ${errorToString(error)}, retrying in ${formatDistanceToNow(addMilliseconds(new Date(), retryTime))}`
+        error.message = `Chart ${this.name}: ${errorToString(error)}, retrying in ${formatDistanceToNow(
+          addMilliseconds(new Date(), retryTime)
+        )}`
         return reject(error)
       }
     })
