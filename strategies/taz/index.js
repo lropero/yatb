@@ -1,9 +1,3 @@
-/*
- * Traders Action Zone Strategy
- * http://www.swing-trade-stocks.com/traders-action-zone.html
- * (good for trending-up markets)
- */
-
 const deepKeys = require('deep-keys')
 
 class Strategy {
