@@ -44,8 +44,8 @@ a → Next advisor
 c → Next chart
 x → Previous chart
 d → Show chart data (press again to change mode)
-f → Show funds (press again to refresh funds)
-l → Show logs (press again to read more)
+f → Show funds (press again to refresh)
+l → Show logs (press again to scroll up)
 t → Show trades
 v → Show trade details (from chart with trade)
 k → Close all trades
