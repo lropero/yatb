@@ -56,7 +56,7 @@ class Strategy {
   }
 
   static getParamsIndicators (paramsIndicators) {
-    if (JSON.stringify(deepKeys(paramsIndicators)) !== '["ema","sma"]') {
+    if (JSON.stringify(deepKeys(paramsIndicators).sort()) !== '["ema","sma"]') {
       return false
     }
     return {

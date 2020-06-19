@@ -35,7 +35,7 @@ class Strategy {
   }
 
   static getParamsIndicators (paramsIndicators) {
-    if (JSON.stringify(deepKeys(paramsIndicators)) !== '["period","stddev"]') {
+    if (JSON.stringify(deepKeys(paramsIndicators).sort()) !== '["period","stddev"]') {
       return false
     }
     return {
