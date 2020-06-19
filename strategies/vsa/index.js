@@ -4,11 +4,12 @@ class Strategy {
   static analyze (candles, isFinal, params) {
     return new Promise((resolve, reject) => {
       // Params validation
+      const paramsKeys = JSON.stringify(deepKeys(params).sort())
       if (
-        JSON.stringify(deepKeys(params)) !==
+        paramsKeys !==
         '["periods","thresholds.largestRanges","thresholds.largestVolumes","thresholds.priceRejection","windows.localHigh","windows.localLow","windows.ranges","windows.volumes"]'
       ) {
-        return reject(new Error('Params not configured properly'))
+        return reject(new Error(`Params not configured properly ${paramsKeys}`))
       } else if (params.periods < Math.max(...Object.values(params.windows))) {
         return reject(new Error('Params not configured properly'))
       } else {

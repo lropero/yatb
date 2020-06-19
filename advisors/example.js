@@ -7,25 +7,18 @@ module.exports = [
     symbol: 'BTCUSDT',
     timeframe: '3m',
     strategies: {
-      vsa: {
+      taz: {
         params: {
-          periods: 500,
-          thresholds: {
-            largestRanges: '10%',
-            largestVolumes: '5%',
-            priceRejection: '70%'
-          },
-          windows: {
-            localHigh: 60,
-            localLow: 60,
-            ranges: 8,
-            volumes: 16
+          periods: 100,
+          indicators: {
+            ema: 30,
+            sma: 10
           }
         },
         trade: {
-          profitTarget: '2%',
           risk: '10%',
           stopLoss: '1%',
+          profitTarget: '2%',
           timeToLive: '1h'
         }
       }
@@ -37,19 +30,19 @@ module.exports = [
     strategies: {
       tazv: {
         params: {
+          periods: 100,
           indicators: {
             ema: 30,
             sma: 10
           },
-          periods: 50,
           windows: {
             volumes: 20
           }
         },
         trade: {
-          profitTarget: '1%',
           risk: '10%',
-          stopLoss: '1%'
+          stopLoss: '1%',
+          profitTarget: '1%'
         }
       },
       vsa: {
@@ -68,9 +61,9 @@ module.exports = [
           }
         },
         trade: {
-          profitTarget: '2%',
           risk: '20%',
           stopLoss: '1%',
+          profitTarget: '2%',
           timeToLive: '1h'
         }
       }
@@ -96,9 +89,9 @@ module.exports = [
           }
         },
         trade: {
-          profitTarget: '3%',
           risk: '30%',
           stopLoss: '2%',
+          profitTarget: '3%',
           timeToLive: '2h'
         }
       }
@@ -124,9 +117,9 @@ module.exports = [
           }
         },
         trade: {
-          profitTarget: '5%',
           risk: '50%',
           stopLoss: '2%',
+          profitTarget: '5%',
           timeToLive: '4h'
         }
       }
@@ -152,9 +145,9 @@ module.exports = [
           }
         },
         trade: {
-          profitTarget: '5%',
           risk: '50%',
           stopLoss: '2%',
+          profitTarget: '5%',
           timeToLive: '1d'
         }
       }
@@ -180,9 +173,9 @@ module.exports = [
           }
         },
         trade: {
-          profitTarget: '5%',
           risk: '80%',
-          stopLoss: '2%'
+          stopLoss: '2%',
+          profitTarget: '5%'
         }
       }
     }
@@ -207,9 +200,9 @@ module.exports = [
           }
         },
         trade: {
-          profitTarget: '2%',
           risk: '20%',
           stopLoss: '1%',
+          profitTarget: '2%',
           timeToLive: '1h'
         }
       }

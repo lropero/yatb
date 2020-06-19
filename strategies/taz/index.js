@@ -4,8 +4,9 @@ class Strategy {
   static analyze (candles, isFinal, params) {
     return new Promise((resolve, reject) => {
       // Params validation
-      if (JSON.stringify(deepKeys(params)) !== '["indicators.ema","indicators.sma","periods"]') {
-        return reject(new Error('Params not configured properly'))
+      const paramsKeys = JSON.stringify(deepKeys(params).sort())
+      if (paramsKeys !== '["indicators.ema","indicators.sma","periods"]') {
+        return reject(new Error(`Params not configured properly ${paramsKeys}`))
       }
 
       const signals = []
