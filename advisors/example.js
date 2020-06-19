@@ -61,7 +61,7 @@ module.exports = [
           }
         },
         trade: {
-          risk: '20%',
+          risk: '10%',
           stopLoss: '1%',
           profitTarget: '2%',
           timeToLive: '1h'
@@ -89,7 +89,7 @@ module.exports = [
           }
         },
         trade: {
-          risk: '30%',
+          risk: '10%',
           stopLoss: '2%',
           profitTarget: '3%',
           timeToLive: '2h'
@@ -117,7 +117,7 @@ module.exports = [
           }
         },
         trade: {
-          risk: '50%',
+          risk: '20%',
           stopLoss: '2%',
           profitTarget: '5%',
           timeToLive: '4h'
@@ -145,7 +145,7 @@ module.exports = [
           }
         },
         trade: {
-          risk: '50%',
+          risk: '20%',
           stopLoss: '2%',
           profitTarget: '5%',
           timeToLive: '1d'
@@ -173,7 +173,7 @@ module.exports = [
           }
         },
         trade: {
-          risk: '80%',
+          risk: '30%',
           stopLoss: '2%',
           profitTarget: '5%'
         }
@@ -184,23 +184,16 @@ module.exports = [
     symbol: 'ETHBTC',
     timeframe: '5m',
     strategies: {
-      vsa: {
+      taz: {
         params: {
-          periods: 500,
-          thresholds: {
-            largestRanges: '10%',
-            largestVolumes: '5%',
-            priceRejection: '70%'
-          },
-          windows: {
-            localHigh: 60,
-            localLow: 60,
-            ranges: 8,
-            volumes: 16
+          periods: 100,
+          indicators: {
+            ema: 30,
+            sma: 10
           }
         },
         trade: {
-          risk: '20%',
+          risk: '10%',
           stopLoss: '1%',
           profitTarget: '2%',
           timeToLive: '1h'

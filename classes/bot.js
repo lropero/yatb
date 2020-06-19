@@ -474,12 +474,12 @@ class Bot {
             c: () => this.handleKeyPress('c'), // Next chart
             d: () => this.handleKeyPress('d'), // Show chart data
             f: () => this.handleKeyPress('f'), // Show funds
-            k: () => this.handleKeyPress('k'), // Close trades
+            k: () => this.handleKeyPress('k'), // Close all trades
             l: () => this.handleKeyPress('l'), // Show logs
             p: () => this.handleKeyPress('p'), // Pause/unpause trading
             q: () => this.handleKeyPress('q'), // Quit
             t: () => this.handleKeyPress('t'), // Show trades
-            v: () => this.handleKeyPress('v'), // Show trade details (from chart with trade)
+            v: () => this.handleKeyPress('v'), // Show trade details
             x: () => this.handleKeyPress('x'), // Previous chart
             y: () => this.handleKeyPress('y'), // Yes (quit screen)
             z: () => this.handleKeyPress('z') // Cycle charts with open trades

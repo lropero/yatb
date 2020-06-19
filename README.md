@@ -42,16 +42,16 @@ $ npm run start:real
 ```sh
 a → Next advisor
 c → Next chart
-d → Show chart data
-f → Show funds
-k → Close trades
-l → Show logs
-p → Pause/unpause trading
-q → Quit
+x → Previous chart
+d → Show chart data (press again to change mode)
+f → Show funds (press again to refresh funds)
+l → Show logs (press again to read more)
 t → Show trades
 v → Show trade details (from chart with trade)
-x → Previous chart
+k → Close all trades
+p → Pause/unpause trading
 z → Cycle charts with open trades
+q → Quit
 ```
 
 ### Architecture
