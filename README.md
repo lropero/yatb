@@ -6,7 +6,7 @@ Yet another trading bot.
 
 ### Requires
 
-- Node v14.4.0
+- Node v14.5.0
 
 ### Installation
 
