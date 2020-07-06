@@ -11,7 +11,7 @@ Yet another trading bot.
 ### Installation
 
 ```sh
-$ npm install
+$ npm ci
 ```
 
 ### Configuration
