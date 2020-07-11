@@ -1,6 +1,6 @@
 {
   "name": "yatb",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Yet another trading bot.",
   "scripts": {
     "clean": "rimraf npm-*.log && rimraf package-lock.json && rimraf node_modules && npm cache verify",
@@ -24,10 +24,9 @@
     "figures": "^3.2.0",
     "is-online": "^8.4.0",
     "js-object-pretty-print": "^0.3.0",
-    "node-binance-api": "^0.11.8",
+    "node-binance-api": "^0.11.10",
     "object-hash": "^2.0.3",
     "rxjs": "^6.6.0",
-    "sfx": "^0.1.1",
     "strip-ansi": "^6.0.0",
     "tulind": "^0.8.18",
     "write": "^2.0.0"
@@ -35,7 +34,7 @@
   "devDependencies": {
     "husky": "^4.2.5",
     "lint-staged": "^10.2.11",
-    "prettier-standard": "^16.3.0",
+    "prettier-standard": "^16.4.1",
     "rimraf": "^3.0.2",
     "upgradeps": "^1.4.1"
   },

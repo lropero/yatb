@@ -1,7 +1,6 @@
 const beep = require('beepbeep')
 const chalk = require('chalk')
 const figures = require('figures')
-const sfx = require('sfx')
 const { format } = require('date-fns')
 
 const { errorToString } = require('../helpers')
@@ -16,26 +15,13 @@ class Log {
       this.stack = event.stack
     }
     switch (this.level) {
-      case 'closeExpire':
-      case 'closeSignal': {
-        sfx.play('submarine')
-        break
-      }
-      case 'closeStop': {
-        sfx.play('basso')
-        break
-      }
-      case 'closeTarget': {
-        sfx.play('tink')
-        break
-      }
       case 'error': {
-        beep()
+        beep(2)
         break
       }
       case 'long':
       case 'short': {
-        sfx.play('pop')
+        beep()
         break
       }
     }
