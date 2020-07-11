@@ -12,27 +12,27 @@ const { pretty } = require('js-object-pretty-print')
 const { millisecondsToTime, plotVolume } = require('../helpers')
 
 const colors = {
-  CHART_BORDER: 'yellow',
-  CHART_DRAWING: 'gray',
-  CHART_PRICE: 'gray',
+  CHART_BORDER: 'white',
+  CHART_DRAWING: 'yellow',
+  CHART_PRICE: 'yellow',
   CHART_PRICE_DOWN: 'magenta',
   CHART_PRICE_NEW_CANDLE: 'white',
   CHART_PRICE_OPEN: 'blue',
   CHART_PRICE_UP: 'cyan',
   CHART_TITLE: 'white',
   DISPLAY_BACKGROUND: 'black',
-  DISPLAY_FOREGROUND: 'magenta',
-  FOOTER_BACKGROUND: 'gray',
+  DISPLAY_FOREGROUND: 'white',
+  FOOTER_BACKGROUND: 'magenta',
   FOOTER_FOREGROUND: 'black',
-  FOOTER_OPTION: 'white',
+  FOOTER_OPTION: 'black',
   FOOTER_OPTION_ARROW: 'yellow',
   FOOTER_OPTION_KEY: 'cyan',
   FUNDS_ASSET: 'yellow',
-  FUNDS_AVAILABLE: 'gray',
+  FUNDS_AVAILABLE: 'white',
   FUNDS_DOLLARS: 'green',
   FUNDS_ORDER: 'magenta',
   FUNDS_TITLE: 'white',
-  LOGGER_BACKGROUND: 'gray',
+  LOGGER_BACKGROUND: 'magenta',
   LOGGER_FOREGROUND: 'white',
   TRADE_LONG: 'cyan',
   TRADE_PRICE: 'yellow',
@@ -41,9 +41,9 @@ const colors = {
   TRADE_TARGET: 'green',
   VOLUME_BACKGROUND: 'bgBlack',
   VOLUME_DOWN: 'red',
-  VOLUME_FOREGROUND: 'gray',
+  VOLUME_FOREGROUND: 'magenta',
   VOLUME_NUMBER: 'yellow',
-  VOLUME_NUMBER_DOTS: 'gray',
+  VOLUME_NUMBER_DOTS: 'magenta',
   VOLUME_OPEN: 'yellow',
   VOLUME_UP: 'green'
 }
@@ -297,7 +297,7 @@ class UI {
         ' ' +
         chalk.white('Really close all trades?') +
         ' ' +
-        chalk.gray(`Press ${chalk.yellow('Y')} to confirm`)
+        chalk.yellow(`Press ${chalk.white('Y')} to confirm`)
     )
     this.screen.render()
   }
@@ -398,7 +398,7 @@ class UI {
         ' ' +
         chalk.white('Really quit?') +
         ' ' +
-        chalk.gray(`Press ${chalk.yellow('Y')} to confirm`)
+        chalk.yellow(`Press ${chalk.white('Y')} to confirm`)
     )
     this.screen.render()
   }
@@ -410,7 +410,7 @@ class UI {
         ? new Date(trade.orders[0].date.getTime() + trade.timeToLive) - new Date()
         : 0
       this.display.setContent(
-        chalk[trade.isOpen ? 'yellow' : 'gray'](
+        chalk[trade.isOpen ? 'yellow' : 'white'](
           pretty(
             timeRemaining > 0
               ? {

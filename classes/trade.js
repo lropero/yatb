@@ -297,10 +297,10 @@ class Trade {
 
   toString (log = false, who = true) {
     const string = `${chalk.underline(this.id)} ${this.info.symbol} ${this.quantity}${chalk[
-      this.isOpen ? 'cyan' : 'gray'
-    ]('@')}${this.price.toFixed(this.decimalPlaces)} ${chalk[this.isOpen ? 'green' : 'gray'](
+      this.isOpen ? 'cyan' : 'white'
+    ]('@')}${this.price.toFixed(this.decimalPlaces)} ${chalk[this.isOpen ? 'green' : 'white'](
       'TRGT ' + this.targetPrice.toFixed(this.decimalPlaces)
-    )} ${chalk[this.isOpen ? 'red' : 'gray']('STOP ' + this.stopPrice.toFixed(this.decimalPlaces))}`
+    )} ${chalk[this.isOpen ? 'red' : 'white']('STOP ' + this.stopPrice.toFixed(this.decimalPlaces))}`
     if (log) {
       return `${string} #avoidBlack${this.who}#`
     }
@@ -318,14 +318,14 @@ class Trade {
           case 'target':
             return chalk.green(figures.play)
           default:
-            return chalk.gray(figures.play)
+            return chalk.white(figures.play)
         }
       }
     }
     const timeRemaining = this.timeToLive ? new Date(this.orders[0].date.getTime() + this.timeToLive) - new Date() : 0
-    return `${getIcon()} ${chalk.gray(format(this.orders[0].date, 'dd-MMM-yy HH:mm:ss'))} ${
-      this.isOpen ? chalk.white(string) : chalk.gray(string)
-    } ${chalk.gray(who ? this.who : this.strategyName)}${
+    return `${getIcon()} ${chalk.white(format(this.orders[0].date, 'dd-MMM-yy HH:mm:ss'))} ${
+      this.isOpen ? chalk.white(string) : chalk.white(string)
+    } ${chalk.white(who ? this.who : this.strategyName)}${
       this.stats
         ? ' ' +
           chalk.cyan.dim(millisecondsToTime(this.stats.duration)) +
