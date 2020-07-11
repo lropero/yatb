@@ -24,7 +24,7 @@ const colors = {
   DISPLAY_FOREGROUND: 'white',
   FOOTER_BACKGROUND: 'magenta',
   FOOTER_FOREGROUND: 'black',
-  FOOTER_OPTION: 'black',
+  FOOTER_OPTION: 'white',
   FOOTER_OPTION_ARROW: 'yellow',
   FOOTER_OPTION_KEY: 'cyan',
   FUNDS_ASSET: 'yellow',
