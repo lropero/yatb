@@ -48,17 +48,11 @@ class Advisor {
                 ? Strategy.getParamsIndicators((strategyConfig.params && strategyConfig.params.indicators) || {})
                 : {}
             if (!(paramsIndicators instanceof Object) || Array.isArray(paramsIndicators)) {
-              return reject(
-                new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicators not configured properly`)
-              )
+              return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicators not configured properly`))
             }
             Object.keys(paramsIndicators).map((indicatorId, kndex) => {
               if (typeof indicatorId !== 'string' || !indicatorId.length) {
-                return reject(
-                  new Error(
-                    `Sight #${index + 1}: Strategy ${strategyName}: Indicator #${kndex + 1} not configured properly`
-                  )
-                )
+                return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator #${kndex + 1} not configured properly`))
               }
               const indicatorName = indicatorId.charAt(0).toUpperCase() + indicatorId.slice(1).toLowerCase()
               if (indicators[indicatorId]) {
@@ -66,16 +60,10 @@ class Advisor {
               }
               const { type = '' } = paramsIndicators[indicatorId]
               if (typeof type !== 'string' || !type.length) {
-                return reject(
-                  new Error(
-                    `Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} not configured properly`
-                  )
-                )
+                return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} not configured properly`))
               }
               if (!tulind.indicators[type.toLowerCase()]) {
-                return reject(
-                  new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} doesn't exist`)
-                )
+                return reject(new Error(`Sight #${index + 1}: Strategy ${strategyName}: Indicator ${indicatorName} doesn't exist`))
               }
               indicators[indicatorId] = paramsIndicators[indicatorId]
             })

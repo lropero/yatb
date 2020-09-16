@@ -103,13 +103,9 @@ class Bot {
           const chart = this.charts[chartId]
           const who = `${advisor.name}→${chart.name}`
           try {
-            const advices = (await Promise.all(advisor.analyze(candles, chart.config.strategies, isFinal, who))).filter(
-              advice => advice
-            )
+            const advices = (await Promise.all(advisor.analyze(candles, chart.config.strategies, isFinal, who))).filter(advice => advice)
             if (advices.length) {
-              advices.map(advice =>
-                this.notifications.next({ type: 'DIGEST_ADVICE', payload: { advisorId, chartId, ...advice } })
-              )
+              advices.map(advice => this.notifications.next({ type: 'DIGEST_ADVICE', payload: { advisorId, chartId, ...advice } }))
             }
           } catch (error) {
             this.log(error)
@@ -144,14 +140,8 @@ class Bot {
             switch (signal) {
               case 'CLOSE LONG':
               case 'CLOSE SHORT': {
-                const trade = this.trades.find(
-                  trade =>
-                    trade.advisorId === advisorId && trade.chartId === chartId && trade.who === who && trade.isOpen
-                )
-                if (
-                  trade &&
-                  ((signal === 'CLOSE LONG' && trade.isLong) || (signal === 'CLOSE SHORT' && !trade.isLong))
-                ) {
+                const trade = this.trades.find(trade => trade.advisorId === advisorId && trade.chartId === chartId && trade.who === who && trade.isOpen)
+                if (trade && ((signal === 'CLOSE LONG' && trade.isLong) || (signal === 'CLOSE SHORT' && !trade.isLong))) {
                   try {
                     await trade.close('signal')
                   } catch (error) {
@@ -165,9 +155,7 @@ class Bot {
                 try {
                   const isLong = signal === 'LONG'
                   const asset = isLong ? chart.info.quoteAsset : chart.info.baseAsset
-                  const longsSellingBackAsset = this.trades.filter(
-                    trade => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset
-                  )
+                  const longsSellingBackAsset = this.trades.filter(trade => trade.isLong && trade.isOpen && this.charts[trade.chartId].info.baseAsset === asset)
                   const shortsSellingBackAsset = this.trades.filter(
                     trade => !trade.isLong && trade.isOpen && this.charts[trade.chartId].info.quoteAsset === asset
                   )
@@ -177,12 +165,7 @@ class Bot {
                   const funds = ((this.funds[asset] && this.funds[asset].available) || 0) - quantityLockedByTrades
                   const amount = (funds * parseFloat(strategy.config.trade.risk || 0)) / 100
                   const quantity = await this.provider.clampQuantity(amount, chart.info, isLong)
-                  if (
-                    quantity > 0 &&
-                    !this.trades.find(
-                      trade => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen
-                    )
-                  ) {
+                  if (quantity > 0 && !this.trades.find(trade => trade.advisorId === advisorId && trade.chartId === chartId && trade.isOpen)) {
                     const trade = await Trade.initialize({
                       advisorId,
                       buy: (quantity, info) =>
@@ -367,9 +350,7 @@ class Bot {
       }
       case 'v': {
         if (['c', 'z'].includes(this.currentMode)) {
-          const trade = this.trades.find(
-            trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart
-          )
+          const trade = this.trades.find(trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
           if (trade) {
             this.currentMode = 'v'
             this.refresh()
@@ -405,21 +386,10 @@ class Bot {
       case 'z': {
         const trades = this.trades.filter(trade => trade.isOpen)
         if (trades.length) {
-          const tradeIndex = trades.findIndex(
-            trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart
-          )
+          const tradeIndex = trades.findIndex(trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart)
           this.currentAdvisor =
-            trades[
-              (['c', 'd1', 'd2', 'd3', 'v', 'z'].includes(this.currentMode) && tradeIndex > 0
-                ? tradeIndex
-                : trades.length) - 1
-            ].advisorId
-          this.currentChart =
-            trades[
-              (['c', 'd1', 'd2', 'd3', 'v', 'z'].includes(this.currentMode) && tradeIndex > 0
-                ? tradeIndex
-                : trades.length) - 1
-            ].chartId
+            trades[(['c', 'd1', 'd2', 'd3', 'v', 'z'].includes(this.currentMode) && tradeIndex > 0 ? tradeIndex : trades.length) - 1].advisorId
+          this.currentChart = trades[(['c', 'd1', 'd2', 'd3', 'v', 'z'].includes(this.currentMode) && tradeIndex > 0 ? tradeIndex : trades.length) - 1].chartId
           this.currentMode = 'z'
           this.refresh()
         }
@@ -514,9 +484,7 @@ class Bot {
       if (Object.keys(this.advisors).length) {
         this.log({
           level: this.options.real ? 'warning' : 'info',
-          message: this.options.real
-            ? '*** REAL MODE ENABLED ***'
-            : 'Safe mode (trades will only be announced), run with -r to place real trades'
+          message: this.options.real ? '*** REAL MODE ENABLED ***' : 'Safe mode (trades will only be announced), run with -r to place real trades'
         })
       }
     } catch (error) {
@@ -576,9 +544,7 @@ class Bot {
       switch (this.currentMode) {
         case 'c':
         case 'z': {
-          const trade = this.trades.find(
-            trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen
-          )
+          const trade = this.trades.find(trade => trade.advisorId === this.currentAdvisor && trade.chartId === this.currentChart && trade.isOpen)
           this.ui.renderChart(this.advisors[this.currentAdvisor], this.charts[this.currentChart], trade)
           break
         }
@@ -593,15 +559,11 @@ class Bot {
         case 'k':
           return this.ui.renderClose()
         case 'l':
-          return this.ui.renderLogs(
-            this.logs.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1)
-          )
+          return this.ui.renderLogs(this.logs.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
         case 'q':
           return this.ui.renderQuit()
         case 't':
-          return this.ui.renderTrades(
-            this.trades.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1)
-          )
+          return this.ui.renderTrades(this.trades.slice((Math.ceil(this.ui.screen.rows * 0.8) - 1 + (this.readMore || 0)) * -1))
         case 'v':
           return this.ui.renderTrade(
             this.trades
@@ -655,9 +617,7 @@ class Bot {
   switchAdvisor (advisorId) {
     delete this.currentChart
     this.currentAdvisor = advisorId
-    const chartIds = Object.keys(this.charts).filter(
-      chartId => this.advisors[this.currentAdvisor].chartIds.includes(chartId) && this.charts[chartId].enabled
-    )
+    const chartIds = Object.keys(this.charts).filter(chartId => this.advisors[this.currentAdvisor].chartIds.includes(chartId) && this.charts[chartId].enabled)
     if (chartIds.length) {
       this.currentChart = chartIds[0]
     }

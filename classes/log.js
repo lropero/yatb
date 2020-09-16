@@ -56,14 +56,9 @@ class Log {
     }
     let message = this.message
     if (this.level === 'long' || this.level === 'short') {
-      message = message.replace(
-        /(.*)#avoidBlack(.*)#/g,
-        (message, string, who) => string + (avoidBlack ? chalk.white(who) : chalk.black(who))
-      )
+      message = message.replace(/(.*)#avoidBlack(.*)#/g, (message, string, who) => string + (avoidBlack ? chalk.white(who) : chalk.black(who)))
     }
-    return `${getIcon(this.level)} ${chalk[avoidBlack ? 'white' : 'black'](
-      format(this.date, 'dd-MMM-yy HH:mm:ss')
-    )} ${chalk.white(message)}`
+    return `${getIcon(this.level)} ${chalk[avoidBlack ? 'white' : 'black'](format(this.date, 'dd-MMM-yy HH:mm:ss'))} ${chalk.white(message)}`
   }
 }
 

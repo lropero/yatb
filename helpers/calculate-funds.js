@@ -23,9 +23,7 @@ function calculateFunds (balances, prices) {
     } else if (prices[`${asset}BTC`]) {
       funds[asset] = {
         ...fundsWithoutDollars[asset],
-        dollars: parseFloat(
-          fundsWithoutDollars[asset].available * parseFloat(prices[`${asset}BTC`]) * parseFloat(prices.BTCUSDT || 0)
-        )
+        dollars: parseFloat(fundsWithoutDollars[asset].available * parseFloat(prices[`${asset}BTC`]) * parseFloat(prices.BTCUSDT || 0))
       }
     }
     return funds

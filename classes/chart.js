@@ -21,9 +21,7 @@ class Chart {
   static initialize (chartId, chartConfig, { exchangeInfo, log, notifications, refreshChart, retrieveStream }) {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const info = exchangeInfo.symbols.find(
-        info => info.symbol === chartConfig.symbol && typeof info.status === 'string'
-      )
+      const info = exchangeInfo.symbols.find(info => info.symbol === chartConfig.symbol && typeof info.status === 'string')
       if (!info) {
         throw new Error('Info not available')
       }
@@ -157,9 +155,7 @@ class Chart {
         }
         const retryTime = 1000 * 60 * ++this.retries
         timer(retryTime).subscribe(() => this.restart())
-        error.message = `Chart ${this.name}: ${errorToString(error)}, retrying in ${formatDistanceToNow(
-          addMilliseconds(new Date(), retryTime)
-        )}`
+        error.message = `Chart ${this.name}: ${errorToString(error)}, retrying in ${formatDistanceToNow(addMilliseconds(new Date(), retryTime))}`
         return reject(error)
       }
     })

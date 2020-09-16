@@ -53,9 +53,7 @@ function withIndicators (candles, configIndicators) {
           }
           indicators[indicatorName] = {}
           indicator.output_names.map((outputName, index) => {
-            indicators[indicatorName][outputName] = new Array(candles.length - results[index].length).concat(
-              results[index]
-            )
+            indicators[indicatorName][outputName] = new Array(candles.length - results[index].length).concat(results[index])
           })
         })
       })

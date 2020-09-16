@@ -8,22 +8,7 @@ const { timer } = require('rxjs')
 const { errorToString, millisecondsToTime, timeframeToMilliseconds } = require('../helpers')
 
 class Trade {
-  constructor (
-    advisorId,
-    buy,
-    chartId,
-    id,
-    info,
-    isLong,
-    log,
-    order,
-    refresh,
-    sell,
-    strategy,
-    stream,
-    updateFunds,
-    who
-  ) {
+  constructor (advisorId, buy, chartId, id, info, isLong, log, order, refresh, sell, strategy, stream, updateFunds, who) {
     const { tickSize } = info.filters.find(filter => filter.filterType === 'PRICE_FILTER')
     const spent = order.fills.reduce((spent, fill) => spent + parseFloat(fill.qty) * parseFloat(fill.price), 0)
     this.advisorId = advisorId
@@ -41,25 +26,15 @@ class Trade {
         ...order
       }
     ]
-    this.price = parseFloat(
-      (order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length).toFixed(
-        this.decimalPlaces
-      )
-    )
+    this.price = parseFloat((order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length).toFixed(this.decimalPlaces))
     this.profitTarget = parseFloat(strategy.config.trade.profitTarget || 0) / 100
-    this.quantity = parseFloat(
-      order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision)
-    )
+    this.quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
     this.refresh = refresh
     this.sell = sell
     this.stopLoss = parseFloat(strategy.config.trade.stopLoss || 0) / 100
-    this.stopPrice = parseFloat(
-      (this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces)
-    )
+    this.stopPrice = parseFloat((this.price - ((spent * this.stopLoss) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces))
     this.strategyName = strategy.name
-    this.targetPrice = parseFloat(
-      (this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces)
-    )
+    this.targetPrice = parseFloat((this.price + ((spent * this.profitTarget) / this.quantity) * (this.isLong ? 1 : -1)).toFixed(this.decimalPlaces))
     this.timeToLive = timeframeToMilliseconds(strategy.config.trade.timeToLive || 0)
     this.updateFunds = updateFunds
     this.who = who
@@ -99,22 +74,7 @@ class Trade {
           }
           const order = isLong ? await buy(quantity, info) : await sell(quantity, info)
           if (order.orderId && order.fills.length) {
-            const trade = new Trade(
-              advisorId,
-              buy,
-              chartId,
-              id,
-              info,
-              isLong,
-              log,
-              order,
-              refresh,
-              sell,
-              strategy,
-              stream,
-              updateFunds,
-              who
-            )
+            const trade = new Trade(advisorId, buy, chartId, id, info, isLong, log, order, refresh, sell, strategy, stream, updateFunds, who)
             await updateFunds()
             return resolve(trade)
           }
@@ -146,18 +106,11 @@ class Trade {
         commission += order.fills.reduce(
           (commission, fill) =>
             commission +
-            parseFloat(fill.commission) *
-              (fill.commissionAsset !== 'USDT'
-                ? funds[fill.commissionAsset].dollars / funds[fill.commissionAsset].available
-                : 1),
+            parseFloat(fill.commission) * (fill.commissionAsset !== 'USDT' ? funds[fill.commissionAsset].dollars / funds[fill.commissionAsset].available : 1),
           0
         )
       })
-      const gross =
-        (profit - loss) *
-        (this.info.quoteAsset !== 'USDT'
-          ? funds[this.info.quoteAsset].dollars / funds[this.info.quoteAsset].available
-          : 1)
+      const gross = (profit - loss) * (this.info.quoteAsset !== 'USDT' ? funds[this.info.quoteAsset].dollars / funds[this.info.quoteAsset].available : 1)
       this.stats = {
         commission,
         duration: this.orders[this.orders.length - 1].date - this.orders[0].date,
@@ -202,14 +155,10 @@ class Trade {
             ...order
           })
           const price = order.fills.reduce((price, fill) => price + parseFloat(fill.price), 0) / order.fills.length
-          const quantity = parseFloat(
-            order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision)
-          )
+          const quantity = parseFloat(order.fills.reduce((quantity, fill) => quantity + parseFloat(fill.qty), 0).toFixed(this.info.quotePrecision))
           this.log({
             level: `close${type.charAt(0).toUpperCase() + type.slice(1)}`,
-            message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(
-              this.decimalPlaces
-            )}`
+            message: `${chalk.underline(this.id)} ${this.info.symbol} ${quantity}${chalk.cyan('@')}${price.toFixed(this.decimalPlaces)}`
           })
           this.refresh()
           this.calculateStats()
@@ -296,11 +245,11 @@ class Trade {
   }
 
   toString (log = false, who = true) {
-    const string = `${chalk.underline(this.id)} ${this.info.symbol} ${this.quantity}${chalk[
-      this.isOpen ? 'cyan' : 'white'
-    ]('@')}${this.price.toFixed(this.decimalPlaces)} ${chalk[this.isOpen ? 'green' : 'white'](
-      'TRGT ' + this.targetPrice.toFixed(this.decimalPlaces)
-    )} ${chalk[this.isOpen ? 'red' : 'white']('STOP ' + this.stopPrice.toFixed(this.decimalPlaces))}`
+    const string = `${chalk.underline(this.id)} ${this.info.symbol} ${this.quantity}${chalk[this.isOpen ? 'cyan' : 'white']('@')}${this.price.toFixed(
+      this.decimalPlaces
+    )} ${chalk[this.isOpen ? 'green' : 'white']('TRGT ' + this.targetPrice.toFixed(this.decimalPlaces))} ${chalk[this.isOpen ? 'red' : 'white'](
+      'STOP ' + this.stopPrice.toFixed(this.decimalPlaces)
+    )}`
     if (log) {
       return `${string} #avoidBlack${this.who}#`
     }

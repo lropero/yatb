@@ -42,14 +42,9 @@ class Strategy {
             // Range larger than previous candles
             if (candles[0].volume >= largestVolumes[largestVolumes.length - 1]) {
               // Volume is large
-              if (
-                candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))
-              ) {
+              if (candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))) {
                 // Volume larger than previous candles
-                if (
-                  (candles[0].close - candles[0].low) / (candles[0].high - candles[0].low) >=
-                  parseFloat(params.thresholds.priceRejection) / 100
-                ) {
+                if ((candles[0].close - candles[0].low) / (candles[0].high - candles[0].low) >= parseFloat(params.thresholds.priceRejection) / 100) {
                   // Price rejection
                   signals.push('LONG')
                 }
@@ -57,9 +52,7 @@ class Strategy {
             }
           }
         }
-      } else if (
-        candles[0].high === Math.max(...candles.slice(0, params.windows.localHigh).map(candle => candle.high))
-      ) {
+      } else if (candles[0].high === Math.max(...candles.slice(0, params.windows.localHigh).map(candle => candle.high))) {
         // Last candle is a local high
         if (candles[0].range >= largestRanges[largestRanges.length - 1]) {
           // Range is large
@@ -67,14 +60,9 @@ class Strategy {
             // Range larger than previous candles
             if (candles[0].volume >= largestVolumes[largestVolumes.length - 1]) {
               // Volume is large
-              if (
-                candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))
-              ) {
+              if (candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))) {
                 // Volume larger than previous candles
-                if (
-                  (candles[0].high - candles[0].close) / (candles[0].high - candles[0].low) >=
-                  parseFloat(params.thresholds.priceRejection) / 100
-                ) {
+                if ((candles[0].high - candles[0].close) / (candles[0].high - candles[0].low) >= parseFloat(params.thresholds.priceRejection) / 100) {
                   // Price rejection
                   signals.push('SHORT')
                 }

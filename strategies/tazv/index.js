@@ -27,9 +27,7 @@ class Strategy {
           // Last candle is final
           if (candles[0].close > fast.ema && candles[0].close < slow.sma) {
             // Price is in the zone
-            if (
-              candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))
-            ) {
+            if (candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))) {
               // Volume larger than previous candles
               signals.push('LONG')
             }
@@ -45,9 +43,7 @@ class Strategy {
           // Last candle is final
           if (candles[0].close < fast.ema && candles[0].close > slow.sma) {
             // Price is in the zone
-            if (
-              candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))
-            ) {
+            if (candles[0].volume === Math.max(...candles.slice(0, params.windows.volumes).map(candle => candle.volume))) {
               // Volume larger than previous candles
               signals.push('SHORT')
             }

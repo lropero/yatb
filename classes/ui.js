@@ -103,17 +103,15 @@ class UI {
       }
     })
     this.footerRight = blessed.box({
-      content: `${chalk[colors.FOOTER_OPTION_KEY]('a')}${chalk[colors.FOOTER_OPTION]('dvisors')}  ${chalk[
-        colors.FOOTER_OPTION_KEY
-      ]('x')} ${chalk[colors.FOOTER_OPTION_ARROW]('<<')} ${chalk[colors.FOOTER_OPTION]('charts')} ${chalk[
+      content: `${chalk[colors.FOOTER_OPTION_KEY]('a')}${chalk[colors.FOOTER_OPTION]('dvisors')}  ${chalk[colors.FOOTER_OPTION_KEY]('x')} ${chalk[
         colors.FOOTER_OPTION_ARROW
-      ]('>>')} ${chalk[colors.FOOTER_OPTION_KEY]('c')}  ${chalk[colors.FOOTER_OPTION_KEY]('d')}${chalk[
-        colors.FOOTER_OPTION
-      ]('ata')}  ${chalk[colors.FOOTER_OPTION_KEY]('f')}${chalk[colors.FOOTER_OPTION]('unds')}  ${chalk[
+      ]('<<')} ${chalk[colors.FOOTER_OPTION]('charts')} ${chalk[colors.FOOTER_OPTION_ARROW]('>>')} ${chalk[colors.FOOTER_OPTION_KEY]('c')}  ${chalk[
         colors.FOOTER_OPTION_KEY
-      ]('l')}${chalk[colors.FOOTER_OPTION]('ogs')}  ${chalk[colors.FOOTER_OPTION_KEY]('t')}${chalk[
-        colors.FOOTER_OPTION
-      ]('rades')}  ${chalk[colors.FOOTER_OPTION_KEY]('q')}${chalk[colors.FOOTER_OPTION]('uit')}`,
+      ]('d')}${chalk[colors.FOOTER_OPTION]('ata')}  ${chalk[colors.FOOTER_OPTION_KEY]('f')}${chalk[colors.FOOTER_OPTION]('unds')}  ${chalk[
+        colors.FOOTER_OPTION_KEY
+      ]('l')}${chalk[colors.FOOTER_OPTION]('ogs')}  ${chalk[colors.FOOTER_OPTION_KEY]('t')}${chalk[colors.FOOTER_OPTION]('rades')}  ${chalk[
+        colors.FOOTER_OPTION_KEY
+      ]('q')}${chalk[colors.FOOTER_OPTION]('uit')}`,
       height: 'shrink',
       left: '50%',
       style: {
@@ -158,9 +156,7 @@ class UI {
     const { close: quote, direction = '' } = chart.candles[chart.candles.length - 1]
     const { tickSize } = chart.info.filters.find(filter => filter.filterType === 'PRICE_FILTER')
     const decimalPlaces = tickSize.replace(/0+$/, '').split('.')[1].length
-    const candles = chart.candles.slice(
-      Math.max(chart.candles.length - this.screen.cols + quote.toString().split('.')[0].length + decimalPlaces + 3, 0)
-    )
+    const candles = chart.candles.slice(Math.max(chart.candles.length - this.screen.cols + quote.toString().split('.')[0].length + decimalPlaces + 3, 0))
     let quoteColor = colors.CHART_PRICE_NEW_CANDLE
     if (direction.length) {
       switch (direction) {
@@ -192,9 +188,7 @@ class UI {
     const tradeNumbers = {}
     if (trade) {
       const prices = ascii.reduce((prices, line) => {
-        const split = line.split(
-          line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532)
-        )
+        const split = line.split(line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532))
         if (split.length === 2) {
           prices.push(split[0].trim())
         }
@@ -215,10 +209,7 @@ class UI {
         const indexStopPrice = distancesStopPrice.indexOf(Math.min(...distancesStopPrice))
         if (indexStopPrice === 0 && Math.abs(prices[0] - trade.stopPrice) < distance) {
           tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
-        } else if (
-          indexStopPrice === prices.length - 1 &&
-          Math.abs(prices[prices.length - 1] - trade.stopPrice) < distance
-        ) {
+        } else if (indexStopPrice === prices.length - 1 && Math.abs(prices[prices.length - 1] - trade.stopPrice) < distance) {
           tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
         } else if (indexStopPrice !== 0 && indexStopPrice !== prices.length - 1) {
           tradeNumbers[indexStopPrice] = chalk[colors.TRADE_STOP](trade.stopPrice.toFixed(decimalPlaces))
@@ -227,10 +218,7 @@ class UI {
         const indexTargetPrice = distancesTargetPrice.indexOf(Math.min(...distancesTargetPrice))
         if (indexTargetPrice === 0 && Math.abs(prices[0] - trade.targetPrice) < distance) {
           tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
-        } else if (
-          indexTargetPrice === prices.length - 1 &&
-          Math.abs(prices[prices.length - 1] - trade.targetPrice) < distance
-        ) {
+        } else if (indexTargetPrice === prices.length - 1 && Math.abs(prices[prices.length - 1] - trade.targetPrice) < distance) {
           tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
         } else if (indexTargetPrice !== 0 && indexTargetPrice !== prices.length - 1) {
           tradeNumbers[indexTargetPrice] = chalk[colors.TRADE_TARGET](trade.targetPrice.toFixed(decimalPlaces))
@@ -239,18 +227,14 @@ class UI {
     }
     const asciiStyled = ascii
       .reduce((asciiStyled, line, index) => {
-        const split = line.split(
-          line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532)
-        )
+        const split = line.split(line.includes(String.fromCharCode(9508)) ? String.fromCharCode(9508) : String.fromCharCode(9532))
         if (split.length === 2) {
           const price = split[0].trim()
           let drawing = chalk[colors.CHART_DRAWING](split[1].slice(0, -1))
           const isQuote = String.fromCharCode(9472, 9581, 9584).includes(stripAnsi(drawing).slice(-1))
           if (!asciiStyled.length) {
             chartLength = stripAnsi(drawing).length
-            const title =
-              chalk[colors.CHART_TITLE](`${advisor.name} - ${chart.name}`) +
-              (trade ? ' ' + trade.toString(false, false) : '')
+            const title = chalk[colors.CHART_TITLE](`${advisor.name} - ${chart.name}`) + (trade ? ' ' + trade.toString(false, false) : '')
             if (chartLength > stripAnsi(title).length) {
               drawing = `${title} ${chalk[colors.CHART_DRAWING](stripAnsi(drawing).slice(stripAnsi(title).length + 1))}`
             }
@@ -265,9 +249,7 @@ class UI {
             }${
               isQuote
                 ? chalk[quoteColor](quote.toFixed(decimalPlaces))
-                : (tradeNumbers[index] && tradeNumbers[index].tradePrice) ||
-                  tradeNumbers[index] ||
-                  chalk[colors.CHART_PRICE](price)
+                : (tradeNumbers[index] && tradeNumbers[index].tradePrice) || tradeNumbers[index] || chalk[colors.CHART_PRICE](price)
             }`
           )
           return asciiStyled
@@ -373,11 +355,7 @@ class UI {
               asset =>
                 `${chalk[colors.FUNDS_ASSET](asset)} ${chalk[colors.FUNDS_AVAILABLE](funds[asset].available)}${
                   funds[asset].onOrder > 0 ? ' ' + chalk[colors.FUNDS_ORDER](funds[asset].onOrder) : ''
-                }${
-                  funds[asset].dollars > 0
-                    ? ' ' + chalk[colors.FUNDS_DOLLARS](formatMoney(funds[asset].dollars, { precision: 3 }))
-                    : ''
-                }`
+                }${funds[asset].dollars > 0 ? ' ' + chalk[colors.FUNDS_DOLLARS](formatMoney(funds[asset].dollars, { precision: 3 })) : ''}`
             )
             .join('\n')
       )
@@ -394,11 +372,7 @@ class UI {
 
   renderQuit () {
     this.display.setContent(
-      chalk[colors.DISPLAY_FOREGROUND](figures.play) +
-        ' ' +
-        chalk.white('Really quit?') +
-        ' ' +
-        chalk.yellow(`Press ${chalk.white('Y')} to confirm`)
+      chalk[colors.DISPLAY_FOREGROUND](figures.play) + ' ' + chalk.white('Really quit?') + ' ' + chalk.yellow(`Press ${chalk.white('Y')} to confirm`)
     )
     this.screen.render()
   }
@@ -406,9 +380,7 @@ class UI {
   renderTrade (trade) {
     if (trade) {
       const { advisorId, buy, chartId, info, log, refresh, sell, stop, target, timer, updateFunds, ...rest } = trade
-      const timeRemaining = trade.timeToLive
-        ? new Date(trade.orders[0].date.getTime() + trade.timeToLive) - new Date()
-        : 0
+      const timeRemaining = trade.timeToLive ? new Date(trade.orders[0].date.getTime() + trade.timeToLive) - new Date() : 0
       this.display.setContent(
         chalk[trade.isOpen ? 'yellow' : 'white'](
           pretty(
