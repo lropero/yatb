@@ -61,7 +61,7 @@ YATB requires a market data provider (e.g. Binance) and can register N advisors 
 
 ### Creating strategies
 
-You can create your own strategies and use them within your advisor(s) (Node.js skills required), ~browse existing [strategies](https://github.com/lropero/yatb/tree/master/strategies) to see how they are built~ (TODO: write how-to-build-strategy documentation). You can use any of [these indicators](https://tulipindicators.org/list), refer to `Function Prototype` on each indicator from that list to build the `params` object required by strategies (or see how existing strategies match up things 😅).
+You can create your own strategies and use them within your advisor(s) (Node.js skills required), browse existing [strategies](https://github.com/lropero/yatb/tree/master/strategies) to see how they are built (TODO: write how-to-build-strategy documentation). You can use any of [these indicators](https://tulipindicators.org/list), refer to `Function Prototype` on each indicator from that list to build the `params` object required by strategies (or see how existing strategies match up things 😅).
 
 Please consider naming and sharing your strategy by creating a pull request.
 
@@ -71,10 +71,10 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ### TODO
 
-- Add providers
-- Add strategies
+- Add more providers
+- Add more strategies
 - Add tests
-- TypeScript
+- TypeScript?
 
 ### License
 

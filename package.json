@@ -38,12 +38,12 @@
     "rimraf": "^3.0.2",
     "upgradeps": "^1.4.2"
   },
+  "author": "Luciano Ropero <lropero@gmail.com>",
   "husky": {
     "hooks": {
       "pre-commit": "npx lint-staged"
     }
   },
-  "author": "Luciano Ropero <lropero@gmail.com>",
   "license": "GPL-3.0",
   "private": true
 }
