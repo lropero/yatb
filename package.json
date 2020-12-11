@@ -32,8 +32,8 @@
     "write": "^2.0.0"
   },
   "devDependencies": {
-    "husky": "^4.3.0",
-    "lint-staged": "^10.5.2",
+    "husky": "^4.3.5",
+    "lint-staged": "^10.5.3",
     "prettier-standard": "^16.4.1",
     "rimraf": "^3.0.2",
     "upgradeps": "^1.4.2"
