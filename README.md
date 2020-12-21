@@ -6,7 +6,7 @@ Yet another trading bot.
 
 ### Requires
 
-- Node v14.15.1
+- Node v14.15.3
 - Node.js native addon build tool → [node-gyp](https://github.com/nodejs/node-gyp)
 
 ### Installation
