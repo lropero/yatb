@@ -3,7 +3,7 @@
   "version": "1.0.1",
   "description": "Yet another trading bot.",
   "scripts": {
-    "clean": "rimraf npm-*.log && rimraf package-lock.json && rimraf node_modules && npm cache verify",
+    "clean": "npx rimraf npm-*.log && npx rimraf package-lock.json && npx -p rimraf rimraf node_modules && npm cache verify",
     "lint": "prettier-standard --lint",
     "nuke": "npm run clean && npm install",
     "start": "node index.js",
