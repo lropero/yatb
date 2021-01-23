@@ -15,7 +15,7 @@ function calculateFunds (balances, prices) {
         ...fundsWithoutDollars[asset],
         dollars: parseFloat(fundsWithoutDollars[asset].available * parseFloat(prices.BTCUSDT || 0))
       }
-    } else if (asset === 'USDT') {
+    } else if (asset === 'DAI' || asset === 'USDT') {
       funds[asset] = {
         ...fundsWithoutDollars[asset],
         dollars: parseFloat(fundsWithoutDollars[asset].available)
