@@ -36,7 +36,7 @@
     "lint-staged": "^10.5.3",
     "prettier-standard": "^16.4.1",
     "rimraf": "^3.0.2",
-    "upgradeps": "^1.4.2"
+    "upgradeps": "^1.4.3"
   },
   "author": "Luciano Ropero <lropero@gmail.com>",
   "husky": {
